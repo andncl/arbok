@@ -1,6 +1,10 @@
 numpy
 matplotlib
+plottr
+spyder-notebook
+ipython
 
 qcodes >= 0.37
 qcodes-contrib-drivers >= 0.18
 quantify-core >= 0.7.1
+
