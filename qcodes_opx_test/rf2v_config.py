@@ -1334,13 +1334,5 @@ rf2v_config = {
 def get_config():
     return {'config': config}
 
-#%%
-import winsound
-def finishSound():
-    duration = 200  # milliseconds
-    freq = 2000  # Hz
-    # for ii in range(0,2,1):
-    #     winsound.Beep(freq//2, duration)
-    #     time.sleep(0.05)
-    #     winsound.Beep(freq, duration)
+
         
