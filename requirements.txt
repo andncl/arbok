@@ -1,8 +1,12 @@
+jupyterlab
 numpy
 matplotlib
 plottr
+spyder
 spyder-notebook
+spyder-kernels
 ipython
+scipy
 
 qcodes >= 0.37
 qcodes-contrib-drivers >= 0.18
