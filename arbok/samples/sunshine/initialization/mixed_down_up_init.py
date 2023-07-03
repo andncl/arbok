@@ -8,6 +8,7 @@ class MixedDownUpInit(SubSequence):
     """
     def __init__(
             self, 
+            sample = None,
             unit_amp = 0.499,
             vHome = [0.0, 0.0, 0.0, 0.0],
             vDeltaM = [-0.035, -0.0, 0.035], 
@@ -25,6 +26,7 @@ class MixedDownUpInit(SubSequence):
         Constructor method for 'MixedDownUpInit' class
         
         Args:
+            sample: (Sample): used physical sample
             unit_amp (float): unit amplitude of all pulses
             vDeltaM (list):
             tPreControlRampMixed (int): time in ns
@@ -38,6 +40,7 @@ class MixedDownUpInit(SubSequence):
             tPreControl (int): time in ns
         """
         super().__init__()
+        self.sample = sample
         self.unit_amp = unit_amp
         self.vHome = vHome
         self.delta = np.array(vDeltaM)/self.unit_amp
