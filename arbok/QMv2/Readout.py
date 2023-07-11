@@ -9,11 +9,9 @@ SSR
 """
 
 from qm.qua import *
-from deviceConfig import *
 import matplotlib.pyplot as plt
-from core.BaseClass import *
 
-class Readout(BaseClass):
+class Readout():
     def __init__(self, tag='', read_label = None, threshold = 0):
         
         self.read_label = read_label
@@ -26,68 +24,12 @@ class Readout(BaseClass):
         self.read = None
         self.state = None
         
-        self.nChops = 1
-        self.vChop = float(0.00/unit_amp)
-        self.chopLabels = [GA_label, GB_label, GC_label]
-        self.chopAmps = [1, -1, 1]
-        self.chopWait = int(2500)
-        self.chopRef = None
-        
         self.read_I_stream = None
         self.read_Q_stream = None
         self.read_stream = None
         self.state_stream = None
         self.chopRef_stream = None
-        
-    def chopped(self):
-        assign(self.read, 0)
-        assign(self.chopRef, 0)
-        vChopInv = 1/self.nChops
-        temp_I = declare(fixed)
-        temp_Q = declare(fixed)
-    
-        with for_(self.chopN, 1, self.chopN <= self.nChops, self.chopN + 1):
-            # Read Ref
-            align()
-            wait(self.chopWait,Gread_label)
-            measure('measure', self.read_label, None, demod.full('x',temp_I),
-                    demod.full('y',temp_Q))
-            wait(self.chopWait,Gread_label)
-            
-            # Read
-            align()
-            play('unit_ramp'*amp( self.chopAmps[0] * self.vChop),self.chopLabels[0])
-            play('unit_ramp'*amp( self.chopAmps[1] * self.vChop),self.chopLabels[1])
-            play('unit_ramp'*amp( self.chopAmps[2] * self.vChop),self.chopLabels[2])
-            align()
-            wait(self.chopWait,Gread_label)
-            measure('measure', self.read_label, None, demod.full('x',self.read_I),
-                    demod.full('y',self.read_Q))
-            wait(self.chopWait,Gread_label)
-            align()
-            play('unit_ramp'*amp(- self.chopAmps[0] * self.vChop),self.chopLabels[0])
-            play('unit_ramp'*amp(- self.chopAmps[1] * self.vChop),self.chopLabels[1])
-            play('unit_ramp'*amp(- self.chopAmps[2] * self.vChop),self.chopLabels[2])
-    
-            # assign(self.chopRef, self.chopRef + temp_I + temp_Q)
-            assign(self.read_I, self.read_I - temp_I)
-            assign(self.read_Q, self.read_Q - temp_Q)
-            # assign(self.read_I, temp_I)
-            # assign(self.read_Q, temp_Q)
-            assign(self.read, self.read + self.read_I + self.read_Q)
-            
-            
-        assign(self.chopRef, temp_I + temp_Q)
-        assign(self.read, self.read * vChopInv)
-        assign(self.state, self.read > self.threshold)
-        
-        save(self.read_I, self.read_I_stream)
-        save(self.read_Q, self.read_Q_stream)
-        save(self.read, self.read_stream)
-        save(self.chopRef, self.chopRef_stream)
-        save(self.state, self.state_stream)
 
-        
     def measure(self):
         ### This function performs a measurement and saves the streams
         measure('measure', self.read_label, None, demod.full('x',self.read_I),
@@ -111,28 +53,9 @@ class Readout(BaseClass):
         self.save()
         align()
         
-    def assignSimple(self,read_I = 0, read_Q = 0, read = 0, thr = None):
-        ### This functions saves streams for a Readout object that is calculated without a measurement. e.g., the difference between 2 readouts.
-        
-        assign(self.read_I, read_I)
-        assign(self.read_Q, read_Q)
-        assign(self.read, read)
-        
-        save(self.read_I, self.read_I_stream)
-        save(self.read_Q, self.read_Q_stream)
-        save(self.read, self.read_stream)
-        
-        assign(self.chopRef, self.read)
-        save(self.chopRef, self.chopRef_stream)
-        
-        if(thr == None):
-            thr = self.threshold
-        
-        self.aboveThreshold(thr)
-    
-    
     def takeDiff(self, read, ref, thr = None):
-        ### This functions saves streams for a Readout object that is calculated without a measurement. e.g., the difference between 2 readouts.
+        """This functions saves streams for a Readout object that is calculated
+        without a measurement. e.g., the difference between 2 readouts. """
         
         assign(self.read_I, read.read_I - ref.read_I)
         assign(self.read_Q, read.read_Q - ref.read_Q)

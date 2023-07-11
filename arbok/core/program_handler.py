@@ -1,6 +1,11 @@
+import warnings
 from qm.qua import *
 from qcodes.utils.dataset.doNd import do2d, do1d, do0d
-from qcodes import Instrument
+from qcodes import (
+    Instrument,
+    Parameter,
+    MultiParameter,0
+)
 
 class ProgramHandler(Instrument):
     """
@@ -19,29 +24,57 @@ class ProgramHandler(Instrument):
         """
         self.name = name
         self.config = config
-        self.init_seq = None 
-        self.control_seq = None
-        self.readout_seq = None
+        self.subsequences = []
         self.qua_programm = None
         self.last_parameter_dict = None
         self.elements = None
-    
+        self.add_parameter(
+            "outer_averaging_loop",
+            unit="",
+            initial_value=True,
+            get_cmd=None,
+            set_cmd=None,
+        )
+
+    def add_subsequence(self, new_sequence):
+        """ Adds a subsequence to the entire programm. Subsequences are executed
+        in order of the list 'self.subsequences' """
+        self.subsequences.append(new_sequence)
+        self.add_subsequence_qc_params(self, new_sequence)
+
+    def add_subsequence_qc_params(self,new_sequence):
+        for key, value in new_sequence.config:
+            if isinstance(value["value"], float):
+                self.add_parameter(
+                    name  = key,
+                    unit = value["unit"],
+                    initial_value= value["value"],
+                    get_cmd=None,
+                    set_cmd=None,
+                )
+            else:
+                warnings.warn("Parameter " + str(key) + " is not of type float")
+
     def get_program(self):
         """Runs the entire sequence"""
         with program() as prog:
-            self.init_seq.declare()
-            self.control_seq.declare()
-            self.readout_seq.declare()
+            for sequence in self.subsequences:
+                sequence.qua_declare_vars()
+
             with program() as prog:
                 with infinite_loop_():
                     if not simulate:
                         pause()
                     if self.wait_for_trigger():
-                        self.init_seq.seqeunce()
-                        self.control_seq.sequence()
-                        self.readout_seq.sequence()
+                        self.create_measurement_loop()
+
                 with stream_processing():
-                    self.stream_results()
+                    for sequence in self.subsequences:
+                            sequence.qua_streams()
+
+    def create_measurement_loop(self):
+        if self.outer_averaging_loop:
+
 
     def stream_results(self):
         if sweep_params.keys.len() == 2:
@@ -67,10 +100,6 @@ class ProgramHandler(Instrument):
                 raise Exception(
                     "It is advises to use 'full_integration' or 'full_demodulation' only for performing 2d scans on the OPX to avoid memory overflow."
                 )
-
-    def check_if_sub_sequences_for_sample(self):
-        """Checks if all subsequences belong to the same sample"""
-        pass
 
     def do2d(
         self,

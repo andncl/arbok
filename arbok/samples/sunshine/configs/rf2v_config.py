@@ -4,7 +4,7 @@
 
 import numpy as np
 
-from Configuration import *
+from arbok.QMv2.Configuration import *
 
 # Unit ramp definition. Used to normalise pulse generation
 base_sample_num = tUnitRamp*4
