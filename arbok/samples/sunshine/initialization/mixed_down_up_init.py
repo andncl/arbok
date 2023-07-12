@@ -25,8 +25,8 @@ class MixedDownUpInit(SubSequence):
                 'tInitLoadRamp': {'unit': 's', 'value': int(1*1e2/4)},
                 'vInitMixed2': {'unit': 'v', 'value': [0.13, -0.4, -0.13]},
                 'tPreControl': {'unit': 's', 'value': int(4e3/4)},
-                },
-            ):
+            },
+    ):
         """
         Constructor method for 'MixedDownUpInit' class
         
@@ -38,7 +38,7 @@ class MixedDownUpInit(SubSequence):
         self.config = config
         self.add_qc_params_from_config(self.config)
 
-    def qua_sequence(self, cls = None):
+    def qua_sequence(self, cls = None, simulate = False):
         """QUA sequence to perform mixed down up initialization"""
         if cls == None: cls = self
         print(cls.tInitLoadMixed())

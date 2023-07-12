@@ -13,54 +13,43 @@ class OtherStReadout():
     unit_amp (float): unit amplitude of all pulses
     """
     def __init__(
-        self, 
-        # program_parameters = {
-        # 'unit_amp': {'value': 0.499, 'unit': 'V'},
-        # 'vHome':{
-        #         'value': [0, 0, 0], 'elements': ['P1', 'J1', 'P2'], 'unit': 'V'
-        # }
-        # },
-        unit_amp = 0.499,
-        vHome = [0, 0, 0],
-        vReference = [0.0, 0.0, -0.0],
-        tReadReferenceRamp = int(17),
-        vPreRead = [0.065, readJ, -0.065],
-        tPreReadRamp = int(17),
-        vPreReadPoint = [0.0925, readJ, -0.0925],
-        tPreReadPoint = int(6),
-        vRead = [0.0925, readJ, -0.0925],
-        tReadRamp = int(12),
-        tPreRead = int(0.1e3/4),
-        tPostRead = int(0.1e3/4),
+            self, 
+            name = 'OtherStReadout',
+            config = {
+                'elements': ['P1', 'J1', 'P2'],
+                'unit_amp': {'unit': 'V', 'value': 0.5},
+                'vHome':{'value': [0, 0, 0], 'unit': 'V'},
+                'vReference': {'unit': 'v', 'value': [0.0, 0.0, 0.0]},
+                'tReadReferenceRamp': {'unit': 's', 'value': int(17)},
+                'vPreRead': {'unit': 'v', 'value': [0.065, 0, -0.065]},
+                'tPreReadRamp': {'unit': 's', 'value': int(17)},
+                'vPreReadPoint': {'unit': 'v', 'value': [0.0925, readJ, -0.0925]},
+                'tPreReadPoint': {'unit': 's', 'value': int(6)},
+                'vRead': {'unit': 'v', 'value': [0.0925, readJ, -0.0925]},
+                'tReadRamp': {'unit': 's', 'value': int(12)},
+                'tPreRead': {'unit': 's', 'value': int(0.1e3/4)},
+                'tPostRead': {'unit': 's', 'value': int(0.1e3/4)},
+                
+            },
     ):
-      """
-      Constructor method for 'DummyReadout' class
-      
-      Args:
-      unit_amp (float): unit amplitude of all pulses
-      """
-      #self.program_parameters = program_parameters
-      self.unit_amp = unit_amp
-      self.vHome = vHome
-      self.vReference = [x/self.unit_amp for x in vReference]
-      self.tReadReferenceRamp = tReadReferenceRamp
-      self.vPreRead = vPreRead 
-      self.tPreReadRamp = tPreReadRamp
-      self.vPreReadPoint = [x/self.unit_amp for x in vPreReadPoint]
-      self.tPreReadPoint = tPreReadPoint
-      self.vRead = [x/self.unit_amp for x in vRead]
-      self.tReadRamp = tReadRamp
-      self.tPreRead = tPreRead
-      self.tPostRead = tPostRead
+        """
+        Constructor method for 'DummyReadout' class
+        
+        Args:
+        unit_amp (float): unit amplitude of all pulses
+        """
+        #self.program_parameters = program_parameters
+        self.config = config
+        self.add_qc_params_from_config(self.config)
 
-      self.ref2 = Readout('ref2_')
-      self.ref2.read_label =  'SDC'
-      self.read = Readout('read_')
-      self.read.read_label = 'SDC'
-      self.diff = Readout('diff_')
-      self.diff.read_label = 'SDC'
-      self.diff.threshold = 0.004
-      self.gettables = [self.ref2, self.read, self.diff]
+        self.ref2 = Readout('ref2_')
+        self.ref2.read_label =  'SDC'
+        self.read = Readout('read_')
+        self.read.read_label = 'SDC'
+        self.diff = Readout('diff_')
+        self.diff.read_label = 'SDC'
+        self.diff.threshold = 0.004
+        self.gettables = [self.ref2, self.read, self.diff]
 
 
     def create_qc_params_from_program_dict(self):
