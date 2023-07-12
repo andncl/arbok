@@ -12,7 +12,8 @@ from qm.qua import *
 import matplotlib.pyplot as plt
 
 class Readout():
-    def __init__(self, tag='', read_label = None, threshold = 0):
+    def __init__(self, tag='', read_label = None, 
+                 threshold = 0, prog_handler = None):
         
         self.read_label = read_label
         self.threshold = threshold
@@ -30,6 +31,18 @@ class Readout():
         self.state_stream = None
         self.chopRef_stream = None
 
+        self.prog_handler = prog_handler
+
+    def get(self):
+        return self.program_handler.get_result(self.tag)
+    
+    def prepare(self):
+        # self.program_handler_start_opx
+        # self.program_handler.opx.resume
+        return
+
+    def finish(self):
+        return
     def measure(self):
         ### This function performs a measurement and saves the streams
         measure('measure', self.read_label, None, demod.full('x',self.read_I),

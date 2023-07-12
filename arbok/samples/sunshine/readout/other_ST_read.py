@@ -74,11 +74,10 @@ class OtherStReadout():
         for gettable in self.gettables:
             gettable.init_qua_vars()
 
-    def qua_sequence(self, cls = None):
+    def qua_sequence(self, cls = None, simulate = False):
         """QUA sequence to perform mixed down up initialization"""
-        if cls == None:
-                cls = self
-        print(cls)
+        if cls == None: cls = self
+
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         play('unit_ramp_20ns'*amp(cls.vReference[0] - cls.vHome[0]),
@@ -93,7 +92,7 @@ class OtherStReadout():
         wait(cls.tPreRead,'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        #cls.ref2.measureAndSave()
+        if simulate: cls.ref2.measureAndSave()
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(cls.tPostRead,'SDC')
@@ -134,7 +133,7 @@ class OtherStReadout():
         wait(cls.tPreRead,'SDC')       
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        #self.read.measureAndSave() 
+        if simulate: self.read.measureAndSave() 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(cls.tPostRead,'SDC')

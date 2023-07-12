@@ -1,87 +1,88 @@
 from arbok.core.subsequence import SubSequence
 import numpy as np
 from qm.qua import *
+from quantify_core.measurement.control import MeasurementControl
 
-class MixedDownUpInit():
+class MixedDownUpInit(SubSequence):
     """
     Class containing parameters and sequence for mixed down up initialization
     """
     def __init__(
             self, 
-            unit_amp = 0.499,
-            vHome = [0.0, 0.0, 0.0, 0.0],
-            vDeltaM = [-0.035, -0.0, 0.035], 
-            tPreControlRampMixed = int(11e3/4), 
-            tInitLoadMixed = int(2500e3/4), 
-            vInitPreLoadMixed1 = [0.105, -0.35, -0.105],
-            tInitPreLoad = int(1e4/4),
-            tInitPreLoadRamp = int(1e4/4),
-            tControl = int(1*1e2/4),
-            tInitLoadRamp = int(1*1e2/4) ,
-            vInitMixed2 = [0.13, -0.4, -0.13, 0.0],
-            tPreControl = int(4e3/4)
+            name = 'MixedDuInit',
+            config = {
+                'elements': ['P1', 'J1', 'P2'],
+                'unit_amp': {'unit': 'V', 'value': 0.5},
+                'tPreControl': {'unit': 's', 'value': int(4e3/4)},
+                'vHome': {'unit': 'v', 'value': [0.0, 0.0, 0.0]},
+                'vDeltaM': {'unit': 's', 'value': [-0.035, -0.0, 0.035]},
+                'tPreControlRampMixed': {'unit': 's', 'value': int(11e3/4)},
+                'tInitLoadMixed': {'unit': 's', 'value': int(2500e3/4)},
+                'vInitPreLoadMixed1': {'unit': 'v', 'value': [0.105, -0.35, -0.105]},
+                'tInitPreLoad': {'unit': 's', 'value': int(1e4/4)},
+                'tInitPreLoadRamp': {'unit': 's', 'value': int(1e4/4)},
+                'tControl': {'unit': 's', 'value': int(1*1e2/4)},
+                'tInitLoadRamp': {'unit': 's', 'value': int(1*1e2/4)},
+                'vInitMixed2': {'unit': 'v', 'value': [0.13, -0.4, -0.13]},
+                'tPreControl': {'unit': 's', 'value': int(4e3/4)},
+                },
             ):
         """
         Constructor method for 'MixedDownUpInit' class
         
         Args:
-            unit_amp (float): unit amplitude of all pulses
-            vDeltaM (list):
-            tPreControlRampMixed (int): time in ns
-            tInitLoadMixed (int): time in ns
-            vInitPreLoadMixed1 (list):
-            tInitPreLoad (int): time in ns
-            tInitPreLoadRamp (int): time in ns
-            tControl (int): time in ns
-            tInitLoadRamp (int): time in ns
-            vInitMixed2 (list):
-            tPreControl (int): time in ns
+            name (str): name of sequence
+            config (dict): config containing pulse parameters
         """
-        super().__init__()
-        self.unit_amp = unit_amp
-        self.vHome = vHome
-        self.delta = np.array(vDeltaM)/self.unit_amp
-        self.tramp = tPreControlRampMixed
-        self.tInitLoadMixed = tInitLoadMixed
-        self.vInitPreLoadMixed1 = np.array(vInitPreLoadMixed1)/self.unit_amp
-        self.tInitPreLoad = tInitPreLoad
-        self.tInitPreLoadRamp = tInitPreLoadRamp
-        self.tControl = tControl
-        self.tInitLoadRamp = tInitLoadRamp
-        self.vInitMixed2 = np.array(vInitMixed2)/self.unit_amp
-        self.tPreControl = tPreControl
+        super().__init__(name = name)
+        self.config = config
+        self.add_qc_params_from_config(self.config)
 
-    def qua_sequence(self):
+    def qua_sequence(self, cls = None):
         """QUA sequence to perform mixed down up initialization"""
+        if cls == None: cls = self
+        print(cls.tInitLoadMixed())
         align()
-        play('unit_ramp'*amp(self.vInitMixed2[0] - self.vHome[0]),'P1',
-            duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vInitMixed2[1] - self.vHome[1]),'J1',
-            duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vInitMixed2[2] - self.vHome[2]),'P2',
-            duration=self.tInitLoadRamp)
-        wait(self.tInitLoadMixed,'P1','P2','J1')
+        play('unit_ramp'*amp(cls.vInitMixed2_P1() - cls.vHome_P1()),'P1',
+            duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(cls.vInitMixed2_J1() - cls.vHome_J1()),'J1',
+            duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(cls.vInitMixed2_P2() - cls.vHome_P2()),'P2',
+            duration=cls.tInitLoadRamp())
+        wait(cls.tInitLoadMixed(),'P1','P2','J1')
     
         align()
-        play('unit_ramp'*amp(self.vInitPreLoadMixed1[0] - self.vInitMixed2[0]),
-             'P1', duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vInitPreLoadMixed1[1] - self.vInitMixed2[1]),
-             'J1', duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vInitPreLoadMixed1[2] - self.vInitMixed2[2]),
-             'P2', duration=self.tInitLoadRamp)
-        wait(self.tControl,'P1','P2','J1')
+        play('unit_ramp'*amp(cls.vInitPreLoadMixed1_P1() - cls.vInitMixed2_P1()),
+             'P1', duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(cls.vInitPreLoadMixed1_J1() - cls.vInitMixed2_J1()),
+             'J1', duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(cls.vInitPreLoadMixed1_P2() - cls.vInitMixed2_P2()),
+             'P2', duration=cls.tInitLoadRamp())
+        wait(cls.tControl(),'P1','P2','J1')
 
         align()
-        play('unit_ramp'*amp(self.delta[0]), 'P1', duration=self.tramp)
-        play('unit_ramp'*amp(self.delta[1]), 'J1', duration=self.tramp)
-        play('unit_ramp'*amp(self.delta[2]), 'P2', duration=self.tramp)
-        # wait(tPreControl,'P1','P2','J1')
+        play('unit_ramp'*amp(cls.vDeltaM_P1()), 'P1',
+             duration=cls.tPreControlRampMixed())
+        play('unit_ramp'*amp(cls.vDeltaM_J1()), 'J1',
+             duration=cls.tPreControlRampMixed())
+        play('unit_ramp'*amp(cls.vDeltaM_P2()), 'P2',
+             duration=cls.tPreControlRampMixed())
+        #wait(cls.tPreControl(),'P1','P2','J1')
 
         align()  
-        play('unit_ramp'*amp(self.vHome[0]- self.delta[0]-self.vInitPreLoadMixed1[0]),
-            'P1', duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vHome[1]- self.delta[1]-self.vInitPreLoadMixed1[1]),
-            'J1', duration=self.tInitLoadRamp)
-        play('unit_ramp'*amp(self.vHome[2]- self.delta[2]-self.vInitPreLoadMixed1[2]),
-            'P2', duration=self.tInitLoadRamp)
+        play('unit_ramp'*amp(
+            cls.vHome_P1()- cls.vInitMixed2_P1()-cls.vInitPreLoadMixed1_P1()
+            ), 'P1', duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(
+            cls.vHome_J1()- cls.vInitMixed2_J1()-cls.vInitPreLoadMixed1_J1()
+            ), 'J1', duration=cls.tInitLoadRamp())
+        play('unit_ramp'*amp(
+            cls.vHome_P2()- cls.vInitMixed2_P2()-cls.vInitPreLoadMixed1_P2()
+            ), 'P2', duration=cls.tInitLoadRamp())
         align() 
+
+    def qua_declare_vars(self):
+        return
+    
+    def qua_streams(self):
+        return

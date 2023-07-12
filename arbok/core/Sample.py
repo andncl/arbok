@@ -16,6 +16,3 @@ class Sample():
         self.config = config
         self.elements = None
     
-    def set_programm(self, programm):
-        """Sets the qua programm"""
-        self.qua_programm = programm

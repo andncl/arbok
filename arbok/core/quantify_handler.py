@@ -1,17 +1,18 @@
 import warnings
 from qm.qua import *
 from qcodes.utils.dataset.doNd import do2d, do1d, do0d
-from qcodes import (
-    Instrument,
-    Parameter,
-    MultiParameter
-)
 
-class QuantifyHandler(Instrument):
+from qualang_tools.external_frameworks.qcodes.opx_driver import OPX
+from qm.QuantumMachinesManager import QuantumMachinesManager
+
+from arbok.core.subsequence import SubSequence
+from arbok.core.sample import Sample
+
+class QuantifyHandler(SubSequence):
     """
     Class describing a QUA program including (Init, Control, Read) 
     """
-    def __init__(self, name: str, config: dict):
+    def __init__(self, name: str, sample: Sample):
         """
         Constructor class for 'QuaProgram' class.
 
@@ -19,44 +20,39 @@ class QuantifyHandler(Instrument):
             name (str): Name of the program
             config (dict): configuration for used sample
         """
-        self.name = name
-        self.config = config
+        super().__init__(name = name)
+        self.sample = sample
+        self.param_config = {'unit_amp': {'unit': 'V', 'value': 0.5}}
+        self.add_qc_params_from_config(self.param_config)
         self.subsequences = []
+        self.gettables = []
         self.qua_programm = None
         self.sweep_params = {}
         self.batch_size = 1 
 
-    def get(self):
-        """Return the gettable value."""
-        return np.sin(t() / np.pi)
+        self.Qm1 = None
+        self.job = None
+        self.result_handles = None
 
     def prepare(self) -> None:
         """Optional methods to prepare can be left undefined."""
         print("Preparing the WaveGettable for acquisition.")
 
-    def finish(self) -> None:
-        """Optional methods to finish can be left undefined."""
-        print("Finishing WaveGettable to wrap up the experiment.")
+        self.QmJob = self.get_QM().execute(self.get_program())
+        self.result_handles = self.QmJob.result_handles
 
-    def add_subsequence(self, new_sequence):
-        """ Adds a subsequence to the entire programm. Subsequences are executed
-        in order of the list 'self.subsequences' """
-        self.subsequences.append(new_sequence)
-        self.add_subsequence_qc_params(self, new_sequence)
+        self.start_opx_if_not_running()
+        self.wait_for_buffer()
 
-    def add_subsequence_qc_params(self,new_sequence):
-        for key, value in new_sequence.config:
-            if isinstance(value["value"], float):
-                self.add_parameter(
-                    name  = key,
-                    unit = value["unit"],
-                    initial_value= value["value"],
-                    get_cmd=None,
-                    set_cmd=None,
-                )
-            else:
-                warnings.warn("Parameter " + str(key) + " is not of type float")
-
+    def get_result(self, name):
+        """Return the gettable value with a certain name"""
+        if getattr(self.result_handles, name):
+            wait_for_values(name)
+            getattr(self.result_handles, name)
+            return name
+        else:
+            NameError(str(name) + "is not ")
+        
     def prepare_quantify_measurement(self, meas_ctrl):
         """Sets the batch_size correctly and adds the gettables as specified in 
         the respective subsequences"""
@@ -72,21 +68,39 @@ class QuantifyHandler(Instrument):
             meas_ctrl.gettables(par)
             getattr(par.name).batch_size = self.batch_size
 
-    def get_program(self):
+    def add_subsequence(self, new_sequence):
+        """ Adds a subsequence to the entire programm. Subsequences are executed
+        in order of the list 'self.subsequences' """
+        self.subsequences.append(new_sequence)
+        self.add_subsequence_qc_params(new_sequence)
+
+    def add_subsequence_qc_params(self, new_sequence):
+        self.add_qc_params_from_config(new_sequence.config)
+
+    def get_program(self, simulate = False):
         """Runs the entire sequence"""
         with program() as prog:
             for sequence in self.subsequences:
                 sequence.qua_declare_vars()
 
-            with program() as prog:
-                with infinite_loop_():
-                    if not simulate:
-                        pause()
-                    if self.wait_for_trigger():
-                        self.create_measurement_loop()
+            with infinite_loop_():
+                if not simulate:
+                    pause()
+                if True: #self.wait_for_trigger():
+                    self.create_measurement_loop()
 
-                with stream_processing():
-                    for sequence in self.subsequences:
-                            sequence.qua_streams()
+            with stream_processing():
+                for sequence in self.subsequences:
+                        sequence.qua_streams()
+        return prog
+    
+    def create_measurement_loop(self, simulate):
+        for sequence in self.subsequences:
+            sequence.qua_sequence(cls = self, simulate = simulate)
 
-    def create_measurement_loop(self):
+    def get_QM(self):
+        QMm = QuantumMachinesManager(store=MyStore(self.dictator, __file__))
+        self.Qm1 = QMm.open_qm(config)
+
+    def set_QMprog(self):
+        self.Qm1.execute(self.program())
