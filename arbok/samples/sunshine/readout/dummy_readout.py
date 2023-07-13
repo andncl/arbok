@@ -1,4 +1,4 @@
-from arbok.core.subsequence import SubSequence
+from arbok.core.sequence import SubSequence
 import numpy as np
 from qm.qua import *
 

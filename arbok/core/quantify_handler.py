@@ -5,10 +5,10 @@ from qcodes.utils.dataset.doNd import do2d, do1d, do0d
 from qualang_tools.external_frameworks.qcodes.opx_driver import OPX
 from qm.QuantumMachinesManager import QuantumMachinesManager
 
-from arbok.core.subsequence import SubSequence
+from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
 
-class QuantifyHandler(SubSequence):
+class QuantifyHandler(Sequence):
     """
     Class describing a QUA program including (Init, Control, Read) 
     """
@@ -23,10 +23,7 @@ class QuantifyHandler(SubSequence):
         super().__init__(name = name)
         self.sample = sample
         self.param_config = {'unit_amp': {'unit': 'V', 'value': 0.5}}
-        self.add_qc_params_from_config(self.param_config)
-        self.subsequences = []
         self.gettables = []
-        self.qua_programm = None
         self.sweep_params = {}
         self.batch_size = 1 
 
@@ -68,15 +65,6 @@ class QuantifyHandler(SubSequence):
             meas_ctrl.gettables(par)
             getattr(par.name).batch_size = self.batch_size
 
-    def add_subsequence(self, new_sequence):
-        """ Adds a subsequence to the entire programm. Subsequences are executed
-        in order of the list 'self.subsequences' """
-        self.subsequences.append(new_sequence)
-        self.add_subsequence_qc_params(new_sequence)
-
-    def add_subsequence_qc_params(self, new_sequence):
-        self.add_qc_params_from_config(new_sequence.config)
-
     def get_program(self, simulate = False):
         """Runs the entire sequence"""
         with program() as prog:
@@ -87,14 +75,14 @@ class QuantifyHandler(SubSequence):
                 if not simulate:
                     pause()
                 if True: #self.wait_for_trigger():
-                    self.create_measurement_loop()
+                    self.create_measurement_loop(simulate)
 
             with stream_processing():
                 for sequence in self.subsequences:
                         sequence.qua_streams()
         return prog
     
-    def create_measurement_loop(self, simulate):
+    def create_measurement_loop(self, simulate = False):
         for sequence in self.subsequences:
             sequence.qua_sequence(cls = self, simulate = simulate)
 
