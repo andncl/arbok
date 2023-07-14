@@ -1,6 +1,7 @@
 from arbok.core.sample import Sample
-from qcodes import (
+from qcodes.instrument import (
     Instrument,
+    InstrumentBase
 )
 
 from qm.qua import *
@@ -17,6 +18,7 @@ class Sequence(Instrument):
     def __init__(self, name: str, param_config = {}, sample = Sample()):
         super().__init__(name = name)
         self.sample = sample
+        self._parent = None
         self.elements = []
         self.subsequences = []
         self.param_config = param_config
@@ -34,6 +36,17 @@ class Sequence(Instrument):
         """Contains raw QUA code to define streams"""
         return
 
+    @property
+    def parent(self) -> InstrumentBase:
+        return self._parent
+    
+    @property
+    def root_instrument(self) -> InstrumentBase:
+        if not self._parent:
+            return self
+        else:
+            return self._parent.root_instrument
+    
     def add_subsequence(self, new_sequence, verbose = False):
         """
         Adds a subsequence to the entire programm. Subsequences are added as 
@@ -44,6 +57,8 @@ class Sequence(Instrument):
             verbose (bool): Flag to trigger debug printouts
             
         """
+        #sub_sequence = SubSequence()
+        new_sequence._parent = self
         self.add_submodule(new_sequence.name, new_sequence)
 
     def get_program(self, simulate = False):
@@ -87,7 +102,7 @@ class Sequence(Instrument):
             else:
                 subsequence.recursive_qua_generation(seq_type)
     
-    def add_qc_params_from_config(self, config, verbose = True):
+    def add_qc_params_from_config(self, config, verbose = False):
         """ 
         Creates QCoDeS parameters for all entries of the config 
         
@@ -99,9 +114,6 @@ class Sequence(Instrument):
             if key == 'elements':
                 self.elements = value
                 if verbose: print("Added elements: " + str(self.elements))
-                continue
-            if key in self.parameters.keys():
-                if verbose: print("Existing paramter  \"" + key + "\" SKIPPED")
                 continue
             if isinstance(value["value"], float) or isinstance(value["value"], int):
                 self.add_parameter(
@@ -151,3 +163,4 @@ class Sequence(Instrument):
         samples = job.get_simulated_samples()
         samples.con1.plot()
         return
+    

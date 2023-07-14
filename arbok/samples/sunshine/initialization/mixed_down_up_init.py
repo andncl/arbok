@@ -1,5 +1,4 @@
 from arbok.core.sequence import Sequence
-import numpy as np
 from qm.qua import *
 from quantify_core.measurement.control import MeasurementControl
 

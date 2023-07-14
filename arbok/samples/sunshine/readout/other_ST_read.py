@@ -52,7 +52,7 @@ class OtherStReadout(Sequence):
         # self.gettables = [self.ref2, self.read, self.diff]
         get_set_1 = DummyGettableSet('read')
         #self.gettables = [get_set_1]
-        
+
     def create_qc_params_from_program_dict(self):
         pass
 
