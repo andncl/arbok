@@ -100,7 +100,7 @@ class Sequence(Instrument):
             if not subsequence.submodules:
                 getattr(subsequence, 'qua_' + str(seq_type))(simulate=simulate)
             else:
-                subsequence.recursive_qua_generation(seq_type)
+                subsequence.recursive_qua_generation(seq_type, simulate)
     
     def add_qc_params_from_config(self, config, verbose = False):
         """ 
