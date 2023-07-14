@@ -15,7 +15,7 @@ class OtherStReadout(Sequence):
     """
     def __init__(
             self, 
-            name = 'OtherStReadout',
+            name: str,
             param_config = {
                 'elements': ['P1', 'J1', 'P2'],
                 'unit_amp': {'unit': 'V', 'value': 0.5},
@@ -51,18 +51,16 @@ class OtherStReadout(Sequence):
         # self.diff.threshold = 0.004
         # self.gettables = [self.ref2, self.read, self.diff]
         get_set_1 = DummyGettableSet('read')
-        self.gettables = [get_set_1]
-        for getset in self.gettables:
-            self.add_subsequence_qc_params(getset, verbose = True)
-
+        #self.gettables = [get_set_1]
+        
     def create_qc_params_from_program_dict(self):
         pass
 
-    def qua_declare(self):
+    def qua_declare(self, simulate = False):
         for gettable in self.gettables:
             gettable.init_qua_vars()
 
-    def qua_stream(self):
+    def qua_stream(self, simulate = False):
         for gettable in self.gettables:
             gettable.init_qua_vars()
 

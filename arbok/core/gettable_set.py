@@ -16,7 +16,6 @@ class GettableSet(Instrument):
                     set_cmd = None,
                     get_cmd = None
                 )
-                print("success")
             else:
                 raise NameError("Gettable \"" + par_name + "\" exists already")
     

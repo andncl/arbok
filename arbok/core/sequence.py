@@ -22,7 +22,7 @@ class Sequence(Instrument):
         self.param_config = param_config
         self.add_qc_params_from_config(self.param_config)
     
-    def qua_declare_vars(self):
+    def qua_declare_vars(self, simulate = False):
         """Contains raw QUA code to declare variable"""
         return
     
@@ -30,11 +30,71 @@ class Sequence(Instrument):
         """Contains raw QUA code to define the pulse sequence"""
         return
     
-    def qua_streams(self):
+    def qua_streams(self, simulate = False):
         """Contains raw QUA code to define streams"""
         return
 
+    def add_subsequence(self, new_sequence, verbose = False):
+        """
+        Adds a subsequence to the entire programm. Subsequences are added as 
+        QCoDeS 'Submodules'. Sequences are executed in order of them being added.
+
+        Args:
+            new_sequence (Sequence): Subsequence to be added
+            verbose (bool): Flag to trigger debug printouts
+            
+        """
+        self.add_submodule(new_sequence.name, new_sequence)
+
+    def get_program(self, simulate = False):
+        """
+        Runs the entire sequence by searching recursively through init, 
+        sequence and stream methods of all subsequences and their subsequences
+
+        Args:
+            simulate (bool): Whether program is simulated
+        """
+        with program() as prog:
+                self.recursive_qua_generation(seq_type = 'declare_vars',
+                                                simulate = simulate)
+
+                with infinite_loop_():
+                    if not simulate:
+                        pause()
+                    if True or simulate: # self.wait_for_trigger()
+                        self.recursive_qua_generation(seq_type = 'sequence',
+                                                    simulate = simulate)
+
+                with stream_processing():
+                    self.recursive_qua_generation(seq_type = 'declare_vars',
+                                                    simulate = simulate)
+        return prog
+    
+    def recursive_qua_generation(self, seq_type = 'sequence', simulate = False):
+        """
+        Recursively runs all QUA code stored in submodules of the given sequence
+
+        Args:
+            seq_type (str): Type of qua code containing method to look for
+            simulate (bool): Whether sequence is simulated
+        """
+        if not self.submodules:
+            getattr(self, 'qua_' + str(seq_type))(simulate=simulate)
+            return
+        for seq_name, subsequence in self.submodules.items():
+            if not subsequence.submodules:
+                getattr(subsequence, 'qua_' + str(seq_type))(simulate=simulate)
+            else:
+                subsequence.recursive_qua_generation(seq_type)
+    
     def add_qc_params_from_config(self, config, verbose = True):
+        """ 
+        Creates QCoDeS parameters for all entries of the config 
+        
+        Args:
+            config (dict): Configuration containing all sequence parameters
+            verbose (bool): Flag to trigger debug printouts
+        """
         for key, value in config.items():
             if key == 'elements':
                 self.elements = value
@@ -73,39 +133,13 @@ class Sequence(Instrument):
                 warnings.warn("Parameter " + str(key) + 
                               " is not of type float int or list")
                 
-    def add_subsequence(self, new_sequence, verbose = False):
-        """
-        Adds a subsequence to the entire programm. Subsequences are executed
-        in order of the list 'self.subsequences'
-        """
-        self.subsequences.append(new_sequence)
-        self.add_subsequence_qc_params(new_sequence, verbose = verbose)
-
-    def add_subsequence_qc_params(self, new_sequence, verbose = False):
-        for name, par in new_sequence.parameters.items():
-            if name not in self.parameters.keys():
-                print(par())
-                print(name)
-                self.add_parameter(
-                    name = name,
-                    unit = par.unit,
-                    intial_value = par(),
-                    set_cmd = par.set_raw,
-                    get_cmd = par.get_raw,
-                )
-                #setattr(self, name, par
-                if verbose: print("Added " + name + " successfully!!" + str(par())) 
-            else:
-                if verbose: print("Existing paramter \"" + name + "\" SKIPPED")
-
-    def get_program(self, simulate = False):
-        """Runs the entire sequence wrapped as a QUA program"""
-        with program() as prog:
-            self.qua_sequence(simulate = simulate)
-        return prog
-    
     def run_remote_simulation(self, duration = 10000):
-        """Simulates the MW sequence locally or on a remote FPGA"""
+        """
+        Simulates the MW sequence on a remote FPGA provided by Quantum Machines
+
+        Args:
+            duration (int): Amount of cycles (4ns/cycle) to simulate
+        """
         QMM = QuantumMachinesManager(
             host='dzurak-6d066ea0.quantum-machines.co',
             port=443,

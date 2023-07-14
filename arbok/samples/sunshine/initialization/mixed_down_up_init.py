@@ -9,7 +9,7 @@ class MixedDownUpInit(Sequence):
     """
     def __init__(
             self, 
-            name = 'MixedDuInit',
+            name: str,
             config = {
                 'elements': ['P1', 'J1', 'P2'],
                 'unit_amp': {'unit': 'V', 'value': 0.5},
@@ -80,8 +80,8 @@ class MixedDownUpInit(Sequence):
             ), 'P2', duration=cls.tInitLoadRamp())
         align() 
 
-    def qua_declare_vars(self):
+    def qua_declare_vars(self, simulate = False):
         return
     
-    def qua_streams(self):
+    def qua_streams(self, simulate = False):
         return
