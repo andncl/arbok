@@ -1,8 +1,12 @@
-from arbok.core.sequence import Sequence
-from arbok.QMv2.Readout import Readout
 import numpy as np
 from qm.qua import *
+
+from arbok.core.sequence import Sequence
+from arbok.core.sample import Sample
+from arbok.QMv2.Readout import Readout
+
 from arbok.core.helpers.dummy_gettable_set import DummyGettableSet
+from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
 
 readJ = 0
 
@@ -16,6 +20,7 @@ class OtherStReadout(Sequence):
     def __init__(
             self, 
             name: str,
+            sample = Sample('sunshine', rf2v_config),
             param_config = {
                 'elements': ['P1', 'J1', 'P2'],
                 'unit_amp': {'unit': 'V', 'value': 0.5},
@@ -38,7 +43,7 @@ class OtherStReadout(Sequence):
         Args:
         unit_amp (float): unit amplitude of all pulses
         """
-        super().__init__(name = name)
+        super().__init__(name, sample)
         self.config = param_config
         self.add_qc_params_from_config(self.config)
 
@@ -50,7 +55,7 @@ class OtherStReadout(Sequence):
         # self.diff.read_label = 'SDC'
         # self.diff.threshold = 0.004
         # self.gettables = [self.ref2, self.read, self.diff]
-        get_set_1 = DummyGettableSet('read')
+        #get_set_1 = DummyGettableSet('read')
         #self.gettables = [get_set_1]
 
     def create_qc_params_from_program_dict(self):
@@ -64,75 +69,74 @@ class OtherStReadout(Sequence):
         for gettable in self.gettables:
             gettable.init_qua_vars()
 
-    def qua_sequence(self, cls = None, simulate = False):
+    def qua_sequence(self, simulate = False):
         """QUA sequence to perform mixed down up initialization"""
-        if cls == None: cls = self
 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        play('unit_ramp_20ns'*amp(cls.vReference_P1() - cls.vHome_P1()),
-                'P1',duration=cls.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(cls.vReference_J1() - cls.vHome_J1()),
-                'J1',duration=cls.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(cls.vReference_P2() - cls.vHome_P2()),
-                'P2',duration=cls.tReadReferenceRamp())
+        play('unit_ramp_20ns'*amp(self.vReference_P1() - self.vHome_P1()),
+                'P1',duration=self.tReadReferenceRamp())
+        play('unit_ramp_20ns'*amp(self.vReference_J1() - self.vHome_J1()),
+                'J1',duration=self.tReadReferenceRamp())
+        play('unit_ramp_20ns'*amp(self.vReference_P2() - self.vHome_P2()),
+                'P2',duration=self.tReadReferenceRamp())
         
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        wait(cls.tPreRead(),'SDC')
+        wait(self.tPreRead(),'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        if not simulate: cls.ref2.measureAndSave()
+        if not simulate: self.ref2.measureAndSave()
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        wait(cls.tPostRead(),'SDC')
-        align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
-                'Qoff','J1_not_sticky')
-        
-        play('unit_ramp_20ns'*amp(-cls.vReference_P1() + cls.vHome_P1()),
-                'P1',duration=cls.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(-cls.vReference_J1() + cls.vHome_J1()),
-                'J1',duration=cls.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(-cls.vReference_P2() + cls.vHome_P2()),
-                'P2',duration=cls.tReadReferenceRamp())
+        wait(self.tPostRead(),'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         
-        play('unit_ramp_20ns'*amp(cls.vPreRead_P1() - cls.vHome_P1()),'P1',
-                duration = cls.tPreReadRamp())
-        play('unit_ramp_20ns'*amp(cls.vPreRead_J1() - cls.vHome_J1()),'J1',
-                duration = cls.tPreReadRamp())
-        play('unit_ramp_20ns'*amp(cls.vPreRead_P2() - cls.vHome_P2()),'P2',
-                duration = cls.tPreReadRamp())
+        play('unit_ramp_20ns'*amp(-self.vReference_P1() + self.vHome_P1()),
+                'P1',duration=self.tReadReferenceRamp())
+        play('unit_ramp_20ns'*amp(-self.vReference_J1() + self.vHome_J1()),
+                'J1',duration=self.tReadReferenceRamp())
+        play('unit_ramp_20ns'*amp(-self.vReference_P2() + self.vHome_P2()),
+                'P2',duration=self.tReadReferenceRamp())
+        align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
+                'Qoff','J1_not_sticky')
+        
+        play('unit_ramp_20ns'*amp(self.vPreRead_P1() - self.vHome_P1()),'P1',
+                duration = self.tPreReadRamp())
+        play('unit_ramp_20ns'*amp(self.vPreRead_J1() - self.vHome_J1()),'J1',
+                duration = self.tPreReadRamp())
+        play('unit_ramp_20ns'*amp(self.vPreRead_P2() - self.vHome_P2()),'P2',
+                duration = self.tPreReadRamp())
         
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky'
                 ,'Qoff','J1_not_sticky')
-        wait(cls.tPreReadPoint())
+        wait(self.tPreReadPoint())
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         
-        play('unit_ramp_20ns'*amp(cls.vRead_P1() - cls.vPreRead_P1()),'P1',
-                duration = cls.tReadRamp())
-        play('unit_ramp_20ns'*amp(cls.vRead_J1() - cls.vPreRead_J1()),'J1',
-                duration = cls.tReadRamp())
-        play('unit_ramp_20ns'*amp(cls.vRead_P2() - cls.vPreRead_P2()),'P2',
-                duration = cls.tReadRamp())
+        play('unit_ramp_20ns'*amp(self.vRead_P1() - self.vPreRead_P1()),'P1',
+                duration = self.tReadRamp())
+        play('unit_ramp_20ns'*amp(self.vRead_J1() - self.vPreRead_J1()),'J1',
+                duration = self.tReadRamp())
+        play('unit_ramp_20ns'*amp(self.vRead_P2() - self.vPreRead_P2()),'P2',
+                duration = self.tReadRamp())
                 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        wait(cls.tPreRead(),'SDC')       
+        wait(self.tPreRead(),'SDC')       
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         if not simulate: self.read.measureAndSave() 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        wait(cls.tPostRead(),'SDC')
+        wait(self.tPostRead(),'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         
-        play('unit_ramp_20ns'*amp(cls.vHome_P1()-cls.vRead_P1()),'P1')
-        play('unit_ramp_20ns'*amp(cls.vHome_J1()-cls.vRead_J1()),'J1')
-        play('unit_ramp_20ns'*amp(cls.vHome_P2()-self.vRead_P2()),'P2')
+        play('unit_ramp_20ns'*amp(self.vHome_P1()-self.vRead_P1()),'P1')
+        play('unit_ramp_20ns'*amp(self.vHome_J1()-self.vRead_J1()),'J1')
+        play('unit_ramp_20ns'*amp(self.vHome_P2()-self.vRead_P2()),'P2')
 
         align()
                     

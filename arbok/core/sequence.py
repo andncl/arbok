@@ -1,4 +1,5 @@
 from arbok.core.sample import Sample
+from arbok.core.sequence_parameter import SequenceParameter
 from qcodes.instrument import (
     Instrument,
     InstrumentBase
@@ -15,14 +16,15 @@ class Sequence(Instrument):
     """
     Class describing a subsequence of a QUA programm (e.g Init, Control, Read). 
     """
-    def __init__(self, name: str, param_config = {}, sample = Sample()):
+    def __init__(self, name: str, sample, param_config = {}):
         super().__init__(name = name)
         self.sample = sample
         self._parent = None
-        self.elements = []
-        self.subsequences = []
+        self.settables = []
         self.param_config = param_config
+
         self.add_qc_params_from_config(self.param_config)
+        self.elements = self.sample.config['elements'].keys()
     
     def qua_declare_vars(self, simulate = False):
         """Contains raw QUA code to declare variable"""
@@ -57,7 +59,6 @@ class Sequence(Instrument):
             verbose (bool): Flag to trigger debug printouts
             
         """
-        #sub_sequence = SubSequence()
         new_sequence._parent = self
         self.add_submodule(new_sequence.name, new_sequence)
 
@@ -67,7 +68,7 @@ class Sequence(Instrument):
         sequence and stream methods of all subsequences and their subsequences
 
         Args:
-            simulate (bool): Whether program is simulated
+            simulate (bool): Flag whether program is simulated
         """
         with program() as prog:
                 self.recursive_qua_generation(seq_type = 'declare_vars',
@@ -77,21 +78,40 @@ class Sequence(Instrument):
                     if not simulate:
                         pause()
                     if True or simulate: # self.wait_for_trigger()
-                        self.recursive_qua_generation(seq_type = 'sequence',
-                                                    simulate = simulate)
-
+                        self.recursive_sweep_generation(
+                            settable_list = self.settables,
+                            simulate = simulate
+                        )
                 with stream_processing():
                     self.recursive_qua_generation(seq_type = 'declare_vars',
                                                     simulate = simulate)
         return prog
     
+    def recursive_sweep_generation(self, settable_list, simulate):
+        """
+        Recursively generates parameter sweeps by introducing one nested loop 
+        per swept parameter. The last given parameter is in the innermost loop.
+
+        Args:
+            settanble_list (list): List of settable parameters
+            simulate (bool): Flag whether program is simulated
+        """
+        if len(settable_list) == 0:
+            self.recursive_qua_generation(
+                seq_type = 'sequence',
+                simulate = simulate
+            )
+        else:
+            for idx, value in settable_list:
+                self.recursive_sweep_generation(settable_list, simulate)
+
     def recursive_qua_generation(self, seq_type = 'sequence', simulate = False):
         """
         Recursively runs all QUA code stored in submodules of the given sequence
 
         Args:
             seq_type (str): Type of qua code containing method to look for
-            simulate (bool): Whether sequence is simulated
+            simulate (bool): Flag whether program is simulated
         """
         if not self.submodules:
             getattr(self, 'qua_' + str(seq_type))(simulate=simulate)
@@ -119,7 +139,9 @@ class Sequence(Instrument):
                 self.add_parameter(
                     name  = key,
                     unit = value["unit"],
-                    initial_value= value["value"],
+                    initial_value = value["value"],
+                    parameter_class = SequenceParameter,
+                    element = 'Q1',
                     get_cmd=None,
                     set_cmd=None,
                 )
@@ -129,13 +151,16 @@ class Sequence(Instrument):
                 for i, item in enumerate(value["value"]):
                     par_name = key + '_' + self.elements[i]
                     if par_name in self.parameters.keys():
-                        if verbose: print("Duplicate paramter \"" + par_name + "\" skipped")
+                        if verbose: 
+                            print("Duplicate paramter \"" + par_name + "\" skipped")
                         continue
                     init_val = item/self.unit_amp() if value["unit"].lower() == 'v' else item
                     self.add_parameter(
                         name  = par_name,
                         unit = value["unit"],
                         initial_value = init_val,
+                        parameter_class = SequenceParameter,
+                        element = 'Q1',
                         get_cmd=None,
                         set_cmd=None,
                     )
