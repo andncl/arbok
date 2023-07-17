@@ -17,9 +17,9 @@ class SmartSwap(Sequence):
                 'unit_amp': {'unit': 'V', 'value': 0.5},
                 'vControl2': {'unit': 'v', 'value': [0]},
                 'vControlSWAP': {'unit': 'v', 'value': [0.5]},
-                'tWait': {'unit': 's', 'value': int(192)},
-                'tSwap': {'unit': 's', 'value': int(4)},
-                'tControlRamp': {'unit': 's', 'value': int(5)},
+                'tWait': {'unit': 'cycles', 'value': int(192)},
+                'tSwap': {'unit': 'cycles', 'value': int(4)},
+                'tControlRamp': {'unit': 'cycles', 'value': int(5)},
             },
     ):
         """
@@ -31,7 +31,7 @@ class SmartSwap(Sequence):
         """
         super().__init__(name, sample)
         self.config = config
-        self.add_qc_params_from_config(self.config, verbose = True)
+        self.add_qc_params_from_config(self.config)
 
     def qua_sequence(self, simulate = False):
         """QUA sequence to perform smart Y-gate"""

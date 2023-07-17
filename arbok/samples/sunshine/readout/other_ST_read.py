@@ -25,7 +25,7 @@ class OtherStReadout(Sequence):
                 'elements': ['P1', 'J1', 'P2'],
                 'unit_amp': {'unit': 'V', 'value': 0.5},
                 'vHome':{'value': [0, 0, 0], 'unit': 'V'},
-                'vReference': {'unit': 'V', 'value': [0.0, 0.0, 0.0]},
+                'vReference': {'unit': 'V', 'value': [0.1, 0.1, 0.1]},
                 'tReadReferenceRamp': {'unit': 's', 'value': int(17)},
                 'vPreRead': {'unit': 'V', 'value': [0.065, 0, -0.065]},
                 'tPreReadRamp': {'unit': 's', 'value': int(17)},
@@ -47,16 +47,14 @@ class OtherStReadout(Sequence):
         self.config = param_config
         self.add_qc_params_from_config(self.config)
 
-        # self.ref2 = Readout('ref2_')
-        # self.ref2.read_label =  'SDC'
-        # self.read = Readout('read_')
-        # self.read.read_label = 'SDC'
-        # self.diff = Readout('diff_')
-        # self.diff.read_label = 'SDC'
-        # self.diff.threshold = 0.004
-        # self.gettables = [self.ref2, self.read, self.diff]
-        #get_set_1 = DummyGettableSet('read')
-        #self.gettables = [get_set_1]
+        self.ref2 = Readout('ref2_', self)
+        self.ref2.read_label =  'SDC'
+        self.read = Readout('read_', self)
+        self.read.read_label = 'SDC'
+        self.diff = Readout('diff_', self)
+        self.diff.read_label = 'SDC'
+        self.diff.threshold = 0.004
+        self.gettables = [self.ref2, self.read, self.diff]
 
     def create_qc_params_from_program_dict(self):
         pass
@@ -66,8 +64,11 @@ class OtherStReadout(Sequence):
             gettable.init_qua_vars()
 
     def qua_stream(self, simulate = False):
+        print("STREAMING")
         for gettable in self.gettables:
-            gettable.init_qua_vars()
+            gettable.save_streams()
+            continue
+        
 
     def qua_sequence(self, simulate = False):
         """QUA sequence to perform mixed down up initialization"""
@@ -86,7 +87,7 @@ class OtherStReadout(Sequence):
         wait(self.tPreRead(),'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        if not simulate: self.ref2.measureAndSave()
+        if True: self.ref2.measureAndSave()
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(self.tPostRead(),'SDC')
@@ -127,7 +128,7 @@ class OtherStReadout(Sequence):
         wait(self.tPreRead(),'SDC')       
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        if not simulate: self.read.measureAndSave() 
+        if True: self.read.measureAndSave() 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(self.tPostRead(),'SDC')
@@ -148,4 +149,4 @@ class OtherStReadout(Sequence):
         # ramp_to_zero('P2')
         # ramp_to_zero('J2')
         # ramp_to_zero('P3')
-        #self.diff.takeDiff(self.read, self.ref2)
+        self.diff.takeDiff(self.read, self.ref2)

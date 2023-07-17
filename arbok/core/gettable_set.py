@@ -1,4 +1,4 @@
-from qcodes import Instrument
+from qcodes.instrument import Instrument, InstrumentModule
 
 class GettableSet(Instrument):
     def __init__(self, name, sequence = None):

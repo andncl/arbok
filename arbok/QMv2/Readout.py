@@ -34,9 +34,24 @@ class Readout():
     def get(self):
         return self.program_handler.get_result(self.name)
     
+    def init_qua_vars(self):
+        self.read_I = declare(fixed)
+        self.read_Q = declare(fixed)
+        self.read = declare(fixed)
+        self.state = declare(bool)
+        self.chopN = declare(int)
+        self.chopRef = declare(fixed)
+        
+        self.read_I_stream = declare_stream()
+        self.read_Q_stream = declare_stream()
+        self.read_stream = declare_stream()
+        self.chopRef_stream = declare_stream()
+        self.state_stream = declare_stream()
+
     def measure(self):
         ### This function performs a measurement and saves the streams
-        measure('measure', self.read_label, None, demod.full('x',self.read_I),
+        measure('measure', self.read_label, None, 
+                demod.full('x',self.read_I),
                 demod.full('y',self.read_Q))
     
     def save(self):
@@ -78,26 +93,9 @@ class Readout():
         self.aboveThreshold(thr)
     
     def aboveThreshold(self, thr):
-        # with if_(thr == None):
-            # thr = self.threshold
-            
         assign(self.state, self.read > thr)
         save(self.state, self.state_stream)
     
-    def init_qua_vars(self):
-        self.read_I = declare(fixed)
-        self.read_Q = declare(fixed)
-        self.read = declare(fixed)
-        self.state = declare(bool)
-        self.chopN = declare(int)
-        self.chopRef = declare(fixed)
-        
-        self.read_I_stream = declare_stream()
-        self.read_Q_stream = declare_stream()
-        self.read_stream = declare_stream()
-        self.chopRef_stream = declare_stream()
-        self.state_stream = declare_stream()
-      
     def save_streams(self):
         self.read_I_stream.save_all(self.name+"read_I")
         self.read_Q_stream.save_all(self.name+"read_Q")
@@ -105,7 +103,7 @@ class Readout():
         self.chopRef_stream.save_all(self.name+"chopRef")
         self.state_stream.save_all(self.name+"state")
         
-        self.read_stream.timestamps().save_all(self.name+"TIMES")
+        #self.read_stream.timestamps().save_all(self.name+"TIMES")
     
     def fetch_streams(self, res):
         self.READ_I = res.get(self.name + 'read_I').fetch_all()['value']

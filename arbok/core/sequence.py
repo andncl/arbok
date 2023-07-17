@@ -20,7 +20,7 @@ class Sequence(Instrument):
         super().__init__(name = name)
         self.sample = sample
         self._parent = None
-        self.settables = []
+        self.sweeps = {}
         self.param_config = param_config
 
         self.add_qc_params_from_config(self.param_config)
@@ -71,23 +71,19 @@ class Sequence(Instrument):
             simulate (bool): Flag whether program is simulated
         """
         with program() as prog:
-                self.recursive_qua_generation(seq_type = 'declare_vars',
+                self.recursive_qua_generation(seq_type = 'declare',
                                                 simulate = simulate)
-
                 with infinite_loop_():
                     if not simulate:
                         pause()
                     if True or simulate: # self.wait_for_trigger()
-                        self.recursive_sweep_generation(
-                            settable_list = self.settables,
-                            simulate = simulate
-                        )
+                        self.recursive_sweep_generation(simulate = simulate)
                 with stream_processing():
-                    self.recursive_qua_generation(seq_type = 'declare_vars',
+                    self.recursive_qua_generation(seq_type = 'stream',
                                                     simulate = simulate)
         return prog
     
-    def recursive_sweep_generation(self, settable_list, simulate):
+    def recursive_sweep_generation(self, simulate):
         """
         Recursively generates parameter sweeps by introducing one nested loop 
         per swept parameter. The last given parameter is in the innermost loop.
@@ -96,14 +92,16 @@ class Sequence(Instrument):
             settanble_list (list): List of settable parameters
             simulate (bool): Flag whether program is simulated
         """
-        if len(settable_list) == 0:
+        if len(self.sweeps) == 0:
             self.recursive_qua_generation(
                 seq_type = 'sequence',
                 simulate = simulate
             )
         else:
-            for idx, value in settable_list:
-                self.recursive_sweep_generation(settable_list, simulate)
+            for parameter, sweep_list in self.sweeps:
+                with for_(*from_array(parameter.name, sweep_list)):
+                    parameter(value)
+                    self.recursive_sweep_generation(simulate)
 
     def recursive_qua_generation(self, seq_type = 'sequence', simulate = False):
         """
@@ -142,7 +140,7 @@ class Sequence(Instrument):
                     initial_value = value["value"],
                     parameter_class = SequenceParameter,
                     element = 'Q1',
-                    get_cmd=None,
+                    get_cmd = None,
                     set_cmd=None,
                 )
                 if verbose: print("Added " + getattr(self, key).name + " successfully!") 
@@ -161,7 +159,6 @@ class Sequence(Instrument):
                         initial_value = init_val,
                         parameter_class = SequenceParameter,
                         element = 'Q1',
-                        get_cmd=None,
                         set_cmd=None,
                     )
                     if verbose: print("Added " + getattr(self, par_name).name
@@ -187,5 +184,5 @@ class Sequence(Instrument):
 
         samples = job.get_simulated_samples()
         samples.con1.plot()
-        return
+        return job
     

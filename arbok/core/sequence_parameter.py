@@ -7,3 +7,6 @@ class SequenceParameter(Parameter):
     def __init__(self, element, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.element = element
+
+    def return_qua_var(self):
+        return

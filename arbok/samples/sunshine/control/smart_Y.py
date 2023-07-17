@@ -39,6 +39,7 @@ class SmartY(Sequence):
         align('Q1','P1','P2','J1','P2_not_sticky','P1_not_sticky','J1_not_sticky')
 
     def qua_declare_vars(self, simulate = False):
+        y_amp = declare()
         return
     
     def qua_streams(self, simulate = False):
