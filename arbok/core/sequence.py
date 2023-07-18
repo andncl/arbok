@@ -1,3 +1,4 @@
+import site
 from arbok.core.sample import Sample
 from arbok.core.sequence_parameter import SequenceParameter
 from qcodes.instrument import (
@@ -6,11 +7,13 @@ from qcodes.instrument import (
 )
 
 from qm.qua import *
+from qualang_tools.loops import from_array
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate.credentials import create_credentials
 from qm import SimulationConfig
 
 import warnings
+import copy
 
 class Sequence(Instrument):
     """
@@ -20,13 +23,14 @@ class Sequence(Instrument):
         super().__init__(name = name)
         self.sample = sample
         self._parent = None
-        self.sweeps = {}
+        self.settables = []
+        self.setpoints_grid = []
         self.param_config = param_config
 
         self.add_qc_params_from_config(self.param_config)
         self.elements = self.sample.config['elements'].keys()
     
-    def qua_declare_vars(self, simulate = False):
+    def qua_declare(self, simulate = False):
         """Contains raw QUA code to declare variable"""
         return
     
@@ -34,7 +38,7 @@ class Sequence(Instrument):
         """Contains raw QUA code to define the pulse sequence"""
         return
     
-    def qua_streams(self, simulate = False):
+    def qua_stream(self, simulate = False):
         """Contains raw QUA code to define streams"""
         return
 
@@ -77,31 +81,54 @@ class Sequence(Instrument):
                     if not simulate:
                         pause()
                     if True or simulate: # self.wait_for_trigger()
-                        self.recursive_sweep_generation(simulate = simulate)
+                        self.recursive_sweep_generation(
+                            copy.copy(self.settables),
+                            copy.copy(self.setpoints_grid),
+                            simulate)
                 with stream_processing():
                     self.recursive_qua_generation(seq_type = 'stream',
-                                                    simulate = simulate)
+                                                  simulate = simulate)
         return prog
     
-    def recursive_sweep_generation(self, simulate):
+    def recursive_sweep_generation(self, settables, setpoints_grid, simulate):
         """
-        Recursively generates parameter sweeps by introducing one nested loop 
-        per swept parameter. The last given parameter is in the innermost loop.
+        Recursively generates QUA parameter sweeps by introducing one nested QUA
+        loops per swept parameter. The last given settables and its corresponding
+        setpoints list is in the innermost loop.
 
         Args:
-            settanble_list (list): List of settable parameters
+]           settables (list): List of QCodes parameter names to sweep
+            setpoints_grid (list): List of QCodes parameter set values
             simulate (bool): Flag whether program is simulated
         """
-        if len(self.sweeps) == 0:
-            self.recursive_qua_generation(
-                seq_type = 'sequence',
-                simulate = simulate
-            )
+        if len(settables) == 0:
+            # this condition gets triggered if we arrive at the innermost loop
+            self.recursive_qua_generation('sequence', simulate)
+            for par in self.settables: par.batched = False
+            return
+        elif len(settables) == len(self.settables):
+            for parameter in settables:
+                parameter.batched = True
+                if type(parameter.get()) == float:
+                    parameter.qua_var = declare(fixed)
+                    globals()[parameter.name+'_sweep_val'] = declare(fixed)
+                elif type(parameter.get()) == int:
+                    parameter.qua_var = declare(int)
+                    globals()[parameter.name+'_sweep_val'] = declare(int)
+                else: 
+                    raise ValueError("Type not supported. Must be float or int")
+                
+        if len(settables) == len(setpoints_grid):
+            parameter = settables[-1]
+            sweep_value = globals()[parameter.name+'_sweep_val']
+            with for_(*from_array(sweep_value, setpoints_grid[-1])):
+                assign(parameter.qua_var, sweep_value)
+                settables.pop()
+                setpoints_grid.pop()
+                self.recursive_sweep_generation(settables, setpoints_grid, simulate)
         else:
-            for parameter, sweep_list in self.sweeps:
-                with for_(*from_array(parameter.name, sweep_list)):
-                    parameter(value)
-                    self.recursive_sweep_generation(simulate)
+            raise ValueError(
+                "settables and setpoints_grid must have same dimensions")
 
     def recursive_qua_generation(self, seq_type = 'sequence', simulate = False):
         """

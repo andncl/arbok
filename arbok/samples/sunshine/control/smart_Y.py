@@ -26,7 +26,7 @@ class SmartY(Sequence):
         """
         super().__init__(name, sample)
         self.config = config
-        self.add_qc_params_from_config(self.config, verbose = True)
+        self.add_qc_params_from_config(self.config)
 
     def qua_sequence(self, simulate = False):
         """QUA sequence to perform smart Y-gate"""

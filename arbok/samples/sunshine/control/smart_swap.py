@@ -37,14 +37,14 @@ class SmartSwap(Sequence):
         """QUA sequence to perform smart Y-gate"""
 
         align('Q1','P1','P2','J1','P2_not_sticky','P1_not_sticky','J1_not_sticky')
-        with strict_timing_():                
-            align('Q1','J1')
-            wait(self.tWait(),'J1')
-            play('cos', 'Q1')
-            play('unit_ramp_20ns'*amp(-self.vControl2_J1()+self.vControlSWAP_J1()),
-                  'J1', duration = self.tControlRamp())
-            wait(self.tSwap(), 'J1')
-            play('unit_ramp_20ns'*amp(+self.vControl2_J1()-self.vControlSWAP_J1()),
-                  'J1', duration = self.tControlRamp())
+            
+        align('Q1','J1')
+        wait(self.tWait(),'J1')
+        play('cos', 'Q1')
+        play('unit_ramp_20ns'*amp(-self.vControl2_J1()+self.vControlSWAP_J1()),
+                'J1', duration = self.tControlRamp())
+        wait(self.tSwap(), 'J1')
+        play('unit_ramp_20ns'*amp(+self.vControl2_J1()-self.vControlSWAP_J1()),
+                'J1', duration = self.tControlRamp())
             
         align('Q1','P1','P2','J1','P2_not_sticky','P1_not_sticky','J1_not_sticky')
