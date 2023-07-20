@@ -5,9 +5,16 @@ class SequenceParameter(Parameter):
     """
     A parameter wrapper that adds the respective element as attribute
     """
-    def __init__(self, element, *args, **kwargs):
+    def __init__(self, elements, *args, **kwargs):
+        """
+        Constructor for 'Sequence parameter class
+
+        Args:
+            elements (list): Elements that should be influenced by parameter
+            batched (bool): Is the variab
+        """
         super().__init__(*args, **kwargs)
-        self.element = element
+        self.element = elements
         self.batched = False
         self.qua_var = None
 
@@ -18,6 +25,3 @@ class SequenceParameter(Parameter):
             return self.qua_var
         else: 
             return self.get()
-            
-    def return_qua_var(self):
-        return

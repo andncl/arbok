@@ -107,14 +107,14 @@ class Sequence(Instrument):
             for par in self.settables: par.batched = False
             return
         elif len(settables) == len(self.settables):
-            for parameter in settables:
-                parameter.batched = True
-                if type(parameter.get()) == float:
-                    parameter.qua_var = declare(fixed)
-                    globals()[parameter.name+'_sweep_val'] = declare(fixed)
-                elif type(parameter.get()) == int:
-                    parameter.qua_var = declare(int)
-                    globals()[parameter.name+'_sweep_val'] = declare(int)
+            for par in settables:
+                par.batched = True
+                if type(par.get()) == float:
+                    par.qua_var = declare(fixed)
+                    globals()[par.name+'_sweep_val'] = declare(fixed)
+                elif type(par.get()) == int:
+                    par.qua_var = declare(int)
+                    globals()[par.name+'_sweep_val'] = declare(int)
                 else: 
                     raise ValueError("Type not supported. Must be float or int")
                 
@@ -166,7 +166,7 @@ class Sequence(Instrument):
                     unit = value["unit"],
                     initial_value = value["value"],
                     parameter_class = SequenceParameter,
-                    element = 'Q1',
+                    elements = ['Q1'],
                     get_cmd = None,
                     set_cmd=None,
                 )
@@ -185,7 +185,7 @@ class Sequence(Instrument):
                         unit = value["unit"],
                         initial_value = init_val,
                         parameter_class = SequenceParameter,
-                        element = 'Q1',
+                        elements = ['Q1'],
                         set_cmd=None,
                     )
                     if verbose: print("Added " + getattr(self, par_name).name
