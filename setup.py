@@ -10,6 +10,7 @@ setup(
         'qm-qua',
         'qualang-tools',
         'quantify-core',
+        'jupyterlab',
         # List your dependencies here
     ],
 )
