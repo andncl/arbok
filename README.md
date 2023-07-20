@@ -21,5 +21,7 @@ conda create --name <your_env_name>
 ```bash
 pip install -e .
 ```
-Arbok should now install all its requirements automatically. If you need additional
+**Do not forget the '-e' keyword before arbok**. Otherwise a module with the same
+name from the public pip repository will be installed. Arbok should now install 
+all its requirements automatically. If you need additional
 packages, install them in your new environment called <your_env_name>
