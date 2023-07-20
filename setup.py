@@ -8,6 +8,8 @@ setup(
     install_requires=[
         'qcodes',
         'qm-qua',
+        'qualang-tools'
+        'quantify-core'
         # List your dependencies here
     ],
 )
