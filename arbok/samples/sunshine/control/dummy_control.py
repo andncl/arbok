@@ -17,13 +17,20 @@ class Square(Sequence):
                 'tSquare': {'unit': 'cycles', 'value': int(4)},
             },
     ):
-        """ Constructor method for 'SmartY' class """
+        """ 
+        Constructor method for square pulse on J1 class
+
+        Args:
+            name (str): name of the sequence
+            sample (Sample): Sample (class) on which sequence is performed
+            config (dict): Dict containing all parameter info for sequence
+        """
         super().__init__(name, sample)
         self.config = config
         self.add_qc_params_from_config(self.config)
 
-    def qua_sequence(self, simulate = False):
-        """QUA sequence to perform smart Y-gate"""
+    def qua_sequence(self):
+        """ QUA sequence to perform square pulse """
 
         align('Q1','P1','P2','J1','P2_not_sticky','P1_not_sticky','J1_not_sticky')
         wait(self.tWait(),'J1')
