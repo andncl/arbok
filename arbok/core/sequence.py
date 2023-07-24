@@ -41,6 +41,12 @@ class Sequence(Instrument):
     def qua_stream(self, simulate = False):
         """Contains raw QUA code to define streams"""
         return
+    
+    def sweep_size(self):
+        self.sweep_size = 1
+        for sweep_list in self.setpoints_grid:
+            self.sweep_size *= len(sweep_list)
+        return self.sweep_size
 
     @property
     def parent(self) -> InstrumentBase:

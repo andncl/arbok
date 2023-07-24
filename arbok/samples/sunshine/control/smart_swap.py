@@ -18,7 +18,7 @@ class SmartSwap(Sequence):
                 'vControl2': {'unit': 'v', 'value': [0]},
                 'vControlSWAP': {'unit': 'v', 'value': [0.5]},
                 'tWait': {'unit': 'cycles', 'value': int(192)},
-                'tSwap': {'unit': 'cycles', 'value': int(4)},
+                'tSwap': {'unit': 'cycles', 'value': int(12)},
                 'tControlRamp': {'unit': 'cycles', 'value': int(5)},
             },
     ):

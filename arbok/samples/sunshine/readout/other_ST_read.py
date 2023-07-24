@@ -5,7 +5,6 @@ from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
 from arbok.QMv2.Readout import Readout
 
-from arbok.core.helpers.dummy_gettable_set import DummyGettableSet
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
 
 readJ = 0
@@ -56,8 +55,14 @@ class OtherStReadout(Sequence):
         self.diff.threshold = 0.004
         self.gettables = [self.ref2, self.read, self.diff]
 
-    def create_qc_params_from_program_dict(self):
-        pass
+    def add_qc_read_params(self):
+        for gettable in self.gettables:
+                self.add_parameter(
+                    name = gettable.name,
+                    setpoints = (),
+                    label = 'empty',
+                    parameter_class = ParameterWithSetpoints
+                )
 
     def qua_declare(self, simulate = False):
         for gettable in self.gettables:

@@ -11,6 +11,6 @@ class Program(Sequence):
     def run(self):
         return
     
-    def connect_OPX(self, host_ip: str, name)
+    def connect_OPX(self, host_ip: str, name):
         QMm = QuantumMachinesManager(host = host_ip, cluster_name = name)
         Qm1 = QMm.open_qm(self.sample.config)
