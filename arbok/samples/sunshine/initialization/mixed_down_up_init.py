@@ -27,7 +27,6 @@ class MixedDownUpInit(Sequence):
                 'tControl': {'unit': 's', 'value': int(1*1e2/4)},
                 'tInitLoadRamp': {'unit': 'cycles', 'value': int(1*1e2/4)},
                 'vInitMixed2': {'unit': 'v', 'value': [0.13, -0.4, -0.13]},
-                'tPreControl': {'unit': 'cycles', 'value': int(40e3/4)},
             },
     ):
         """
@@ -41,9 +40,8 @@ class MixedDownUpInit(Sequence):
         self.config = config
         self.add_qc_params_from_config(self.config)
 
-    def qua_sequence(self, simulate = False):
+    def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
-        if self == None: self = self
         align()
         play('unit_ramp'*amp(self.vInitMixed2_P1() - self.vHome_P1()),'P1',
             duration=self.tInitLoadRamp())
@@ -52,7 +50,6 @@ class MixedDownUpInit(Sequence):
         play('unit_ramp'*amp(self.vInitMixed2_P2() - self.vHome_P2()),'P2',
             duration=self.tInitLoadRamp())
         wait(self.tInitLoadMixed(),'P1','P2','J1')
-    
         align()
         play('unit_ramp'*amp(self.vInitPreLoadMixed1_P1() - self.vInitMixed2_P1()),
              'P1', duration=self.tInitLoadRamp())
@@ -61,7 +58,6 @@ class MixedDownUpInit(Sequence):
         play('unit_ramp'*amp(self.vInitPreLoadMixed1_P2() - self.vInitMixed2_P2()),
              'P2', duration=self.tInitLoadRamp())
         wait(self.tControl(),'P1','P2','J1')
-
         align()
         play('unit_ramp'*amp(self.vDeltaM_P1()), 'P1',
              duration=self.tPreControlRampMixed())
@@ -70,7 +66,6 @@ class MixedDownUpInit(Sequence):
         play('unit_ramp'*amp(self.vDeltaM_P2()), 'P2',
              duration=self.tPreControlRampMixed())
         wait(self.tPreControl(),'P1','P2','J1')
-
         align()  
         play('unit_ramp'*amp(
             self.vHome_P1()- self.vDeltaM_P1()-self.vInitPreLoadMixed1_P1()
@@ -82,9 +77,3 @@ class MixedDownUpInit(Sequence):
             self.vHome_P2()- self.vDeltaM_P2()-self.vInitPreLoadMixed1_P2()
             ), 'P2', duration=self.tInitLoadRamp())
         align() 
-
-    def qua_declare_vars(self, simulate = False):
-        return
-    
-    def qua_streams(self, simulate = False):
-        return
