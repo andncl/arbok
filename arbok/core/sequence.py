@@ -30,23 +30,24 @@ class Sequence(Instrument):
         self.add_qc_params_from_config(self.param_config)
         self.elements = self.sample.config['elements'].keys()
     
-    def qua_declare(self, simulate = False):
+    def qua_declare(self):
         """Contains raw QUA code to declare variable"""
         return
     
-    def qua_sequence(self, cls = None, simulate = False):
+    def qua_sequence(self):
         """Contains raw QUA code to define the pulse sequence"""
         return
     
-    def qua_stream(self, simulate = False):
+    def qua_stream(self):
         """Contains raw QUA code to define streams"""
         return
     
-    def sweep_size(self):
-        self.sweep_size = 1
+    def sweep_size(self) -> int:
+        """ Returns the sweep size from the settables via the setpoints_grid"""
+        sweep_size = 1
         for sweep_list in self.setpoints_grid:
-            self.sweep_size *= len(sweep_list)
-        return self.sweep_size
+            sweep_size *= len(sweep_list)
+        return sweep_size
 
     @property
     def parent(self) -> InstrumentBase:
@@ -59,15 +60,13 @@ class Sequence(Instrument):
         else:
             return self._parent.root_instrument
     
-    def add_subsequence(self, new_sequence, verbose = False):
+    def add_subsequence(self, new_sequence):
         """
         Adds a subsequence to the entire programm. Subsequences are added as 
         QCoDeS 'Submodules'. Sequences are executed in order of them being added.
 
         Args:
             new_sequence (Sequence): Subsequence to be added
-            verbose (bool): Flag to trigger debug printouts
-            
         """
         new_sequence._parent = self
         self.add_submodule(new_sequence.name, new_sequence)
@@ -81,22 +80,20 @@ class Sequence(Instrument):
             simulate (bool): Flag whether program is simulated
         """
         with program() as prog:
-                self.recursive_qua_generation(seq_type = 'declare',
-                                                simulate = simulate)
-                with infinite_loop_():
-                    if not simulate:
-                        pause()
-                    if True or simulate: # self.wait_for_trigger()
-                        self.recursive_sweep_generation(
-                            copy.copy(self.settables),
-                            copy.copy(self.setpoints_grid),
-                            simulate)
-                with stream_processing():
-                    self.recursive_qua_generation(seq_type = 'stream',
-                                                  simulate = simulate)
+            self.recursive_qua_generation(seq_type = 'declare')
+            with infinite_loop_():
+                if not simulate:
+                    pause()
+                if True or simulate: # self.wait_for_trigger()
+                    self.recursive_sweep_generation(
+                        copy.copy(self.settables),
+                        copy.copy(self.setpoints_grid),
+                    )
+            with stream_processing():
+                self.recursive_qua_generation(seq_type = 'stream')
         return prog
     
-    def recursive_sweep_generation(self, settables, setpoints_grid, simulate):
+    def recursive_sweep_generation(self, settables, setpoints_grid):
         """
         Recursively generates QUA parameter sweeps by introducing one nested QUA
         loops per swept parameter. The last given settables and its corresponding
@@ -109,7 +106,7 @@ class Sequence(Instrument):
         """
         if len(settables) == 0:
             # this condition gets triggered if we arrive at the innermost loop
-            self.recursive_qua_generation('sequence', simulate)
+            self.recursive_qua_generation('sequence')
             for par in self.settables: par.batched = False
             return
         elif len(settables) == len(self.settables):
@@ -131,12 +128,12 @@ class Sequence(Instrument):
                 assign(parameter.qua_var, sweep_value)
                 settables.pop()
                 setpoints_grid.pop()
-                self.recursive_sweep_generation(settables, setpoints_grid, simulate)
+                self.recursive_sweep_generation(settables, setpoints_grid)
         else:
             raise ValueError(
                 "settables and setpoints_grid must have same dimensions")
 
-    def recursive_qua_generation(self, seq_type = 'sequence', simulate = False):
+    def recursive_qua_generation(self, seq_type = 'sequence'):
         """
         Recursively runs all QUA code stored in submodules of the given sequence
 
@@ -145,13 +142,13 @@ class Sequence(Instrument):
             simulate (bool): Flag whether program is simulated
         """
         if not self.submodules:
-            getattr(self, 'qua_' + str(seq_type))(simulate=simulate)
+            getattr(self, 'qua_' + str(seq_type))()
             return
         for seq_name, subsequence in self.submodules.items():
             if not subsequence.submodules:
-                getattr(subsequence, 'qua_' + str(seq_type))(simulate=simulate)
+                getattr(subsequence, 'qua_' + str(seq_type))()
             else:
-                subsequence.recursive_qua_generation(seq_type, simulate)
+                subsequence.recursive_qua_generation(seq_type)
     
     def add_qc_params_from_config(self, config, verbose = False):
         """ 
@@ -164,7 +161,8 @@ class Sequence(Instrument):
         for key, value in config.items():
             if key == 'elements':
                 self.elements = value
-                if verbose: print("Added elements: " + str(self.elements))
+                if verbose:
+                    print(f'Added elements: {str(self.elements)}')
                 continue
             if isinstance(value["value"], float) or isinstance(value["value"], int):
                 self.add_parameter(
@@ -176,12 +174,13 @@ class Sequence(Instrument):
                     get_cmd = None,
                     set_cmd=None,
                 )
-                if verbose: print("Added " + getattr(self, key).name + " successfully!") 
+                if verbose: 
+                    print(f'Added {getattr(self, key).name} successfully!') 
 
             elif isinstance(value["value"], list):
                 for i, item in enumerate(value["value"]):
-                    par_name = key + '_' + self.elements[i]
-                    if par_name in self.parameters.keys():
+                    par_name = f'{key}_{self.elements[i]}'
+                    if par_name in self.parameters:
                         if verbose: 
                             print("Duplicate paramter \"" + par_name + "\" skipped")
                         continue
@@ -194,8 +193,8 @@ class Sequence(Instrument):
                         elements = ['Q1'],
                         set_cmd=None,
                     )
-                    if verbose: print("Added " + getattr(self, par_name).name
-                          + " successfully!") 
+                    if verbose:
+                        print(f'Added {getattr(self, par_name).name} successfully!')
             else:
                 warnings.warn("Parameter " + str(key) + 
                               " is not of type float int or list")
@@ -207,12 +206,12 @@ class Sequence(Instrument):
         Args:
             duration (int): Amount of cycles (4ns/cycle) to simulate
         """
-        QMM = QuantumMachinesManager(
+        qmm = QuantumMachinesManager(
             host='dzurak-6d066ea0.quantum-machines.co',
             port=443,
             credentials=create_credentials()
         )
-        job = QMM.simulate(self.sample.config, self.get_program(simulate = True),
+        job = qmm.simulate(self.sample.config, self.get_program(simulate = True),
                            SimulationConfig(duration=duration))
 
         samples = job.get_simulated_samples()
