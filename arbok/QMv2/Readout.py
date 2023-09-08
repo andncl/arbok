@@ -30,6 +30,7 @@ class Readout():
         self.read_stream = None
         self.state_stream = None
         self.chopRef_stream = None
+        self.stream_list = ['read_I', 'read_Q', 'read', 'chopRef', 'state']
 
     def get(self):
         return self.program_handler.get_result(self.name)
@@ -97,6 +98,14 @@ class Readout():
         save(self.state, self.state_stream)
     
     def save_streams(self):
+        sweep_size = self.sequence.root_instrument.sweep_size()
+
+        self.read_I_stream.buffer(sweep_size).save(self.name+"read_I_buffer")
+        self.read_Q_stream.buffer(sweep_size).save(self.name+"read_Q_buffer")
+        self.read_stream.buffer(sweep_size).save(self.name+"read_buffer")
+        self.chopRef_stream.buffer(sweep_size).save(self.name+"chopRef_buffer")
+        self.state_stream.buffer(sweep_size).save(self.name+"state_buffer")
+
         self.read_I_stream.save_all(self.name+"read_I")
         self.read_Q_stream.save_all(self.name+"read_Q")
         self.read_stream.save_all(self.name+"read")
