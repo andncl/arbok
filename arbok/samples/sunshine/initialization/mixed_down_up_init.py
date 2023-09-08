@@ -41,7 +41,7 @@ class MixedDownUpInit(Sequence):
         self.config = config
         self.add_qc_params_from_config(self.config)
 
-    def qua_sequence(self, simulate = False):
+    def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
         if self == None: self = self
         align()
@@ -83,8 +83,8 @@ class MixedDownUpInit(Sequence):
             ), 'P2', duration=self.tInitLoadRamp())
         align() 
 
-    def qua_declare_vars(self, simulate = False):
+    def qua_declare(self):
         return
     
-    def qua_streams(self, simulate = False):
+    def qua_streams(self):
         return
