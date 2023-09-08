@@ -3,10 +3,14 @@ from qm.qua import *
 
 from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
+from arbok.core.sequence_parameter import ReadParameter
 from arbok.QMv2.Readout import Readout
 
 from arbok.core.helpers.dummy_gettable_set import DummyGettableSet
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
+
+from qcodes.parameters import ParameterWithSetpoints
+from qcodes.validators import Arrays
 
 readJ = 0
 
@@ -55,22 +59,30 @@ class OtherStReadout(Sequence):
         self.diff.read_label = 'SDC'
         self.diff.threshold = 0.004
         self.gettables = [self.ref2, self.read, self.diff]
+        self.add_qc_read_params()
 
-    def create_qc_params_from_program_dict(self):
-        pass
+    def add_qc_read_params(self):
+        for gettable in self.gettables:
+                for stream in gettable.stream_list:
+                        self.add_parameter(
+                        name = gettable.name + stream,
+                        #setpoints = (),
+                        label = 'empty',
+                        parameter_class = ReadParameter,
+                        #vals = Arrays(shape = (1,))
+                        )
 
-    def qua_declare(self, simulate = False):
+    def qua_declare(self):
         for gettable in self.gettables:
             gettable.init_qua_vars()
 
-    def qua_stream(self, simulate = False):
-        print("STREAMING")
+    def qua_stream(self):
         for gettable in self.gettables:
             gettable.save_streams()
             continue
         
 
-    def qua_sequence(self, simulate = False):
+    def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
@@ -87,7 +99,7 @@ class OtherStReadout(Sequence):
         wait(self.tPreRead(),'SDC')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        if True: self.ref2.measureAndSave()
+        self.ref2.measureAndSave()
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(self.tPostRead(),'SDC')
@@ -128,7 +140,7 @@ class OtherStReadout(Sequence):
         wait(self.tPreRead(),'SDC')       
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        if True: self.read.measureAndSave() 
+        self.read.measureAndSave() 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(self.tPostRead(),'SDC')
