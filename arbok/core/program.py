@@ -21,3 +21,9 @@ class Program(Sequence):
     def run(self):
         self.qm_job = self.opx.execute(self.get_program())
         self.result_handles = self.qm_job.result_handles
+        self.qm_job.resume()
+
+    def prepare_meas_ctrl(self, meas_ctrl):
+        meas_ctrl.settables(self.settables)
+        meas_ctrl.setpoints_grid(self.setpoints_grid)
+        return self.settables
