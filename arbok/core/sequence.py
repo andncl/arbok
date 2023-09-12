@@ -1,3 +1,6 @@
+import warnings
+import copy
+
 from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.validators import Arrays
 
@@ -6,9 +9,6 @@ from qualang_tools.loops import from_array
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.simulate.credentials import create_credentials
 from qm import SimulationConfig
-
-import warnings
-import copy
 
 from arbok.core.sequence_parameter import SequenceParameter
 
@@ -19,6 +19,7 @@ class Sequence(Instrument):
     def __init__(self, name: str, sample, param_config = {}):
         super().__init__(name = name)
         self.sample = sample
+        self.elements = self.sample.elements
         self._parent = None
         self.settables = []
         self.setpoints_grid = []
@@ -26,7 +27,6 @@ class Sequence(Instrument):
         self.param_config = param_config
 
         self.add_qc_params_from_config(self.param_config)
-        self.elements = self.sample.config['elements'].keys()
 
     def qua_declare(self):
         """Contains raw QUA code to declare variable"""
@@ -53,7 +53,7 @@ class Sequence(Instrument):
 
     @property
     def root_instrument(self) -> InstrumentBase:
-        if not self._parent:
+        if self._parent is None:
             return self
         return self._parent.root_instrument
 
@@ -92,7 +92,7 @@ class Sequence(Instrument):
                 with stream_processing():
                     self.recursive_qua_generation(seq_type = 'stream')
         return prog
-    
+
     def recursive_sweep_generation(self, settables, setpoints_grid):
         """
         Recursively generates QUA parameter sweeps by introducing one nested QUA
@@ -107,16 +107,14 @@ class Sequence(Instrument):
         if len(settables) == 0:
             # this condition gets triggered if we arrive at the innermost loop
             self.recursive_qua_generation('sequence')
-            #for par in self.settables: par.batched = False
             return
         if len(settables) == len(self.settables):
             for i, par in enumerate(settables):
                 par.batched = True
-                #par.vals = Arrays(shape= np.shape(self.setpoints_grid[i] ))
                 par.vals= Arrays()
                 par.set(self.setpoints_grid[i])
                 self.sweep_len *= len(self.setpoints_grid[i])
-                if par.get().dtype == float:#
+                if par.get().dtype == float:
                     par.qua_var = declare(fixed)
                     globals()[par.name+'_sweep_val'] = declare(fixed)
                 elif par.get().dtype == int:
@@ -152,56 +150,39 @@ class Sequence(Instrument):
                 getattr(subsequence, 'qua_' + str(seq_type))()
             else:
                 subsequence.recursive_qua_generation(seq_type)
-    
-    def add_qc_params_from_config(self, config, verbose = False):
+           
+    def add_qc_params_from_config(self, config):
         """ 
         Creates QCoDeS parameters for all entries of the config 
         
         Args:
             config (dict): Configuration containing all sequence parameters
-            verbose (bool): Flag to trigger debug printouts
         """
-        for key, value in config.items():
-            if key == 'elements':
-                self.elements = value
-                if verbose:
-                    print(f'Added elements: {str(self.elements)}')
-                continue
-            if isinstance(value["value"], float) or isinstance(value["value"], int):
+        for param_name, param_dict in config.items():
+            if 'elements' in param_dict:
+                for element, value in param_dict['elements'].items():
+                    self.add_parameter(
+                        name  = f'{param_name}_{element}',
+                        unit = param_dict["unit"],
+                        initial_value = value,
+                        parameter_class = SequenceParameter,
+                        element = element,
+                        get_cmd = None,
+                        set_cmd = None,
+                    )
+            elif 'value' in param_dict:
                 self.add_parameter(
-                    name  = key,
-                    unit = value["unit"],
-                    initial_value = value["value"],
+                    name  = param_name,
+                    unit = param_dict["unit"],
+                    initial_value = param_dict["value"],
                     parameter_class = SequenceParameter,
-                    elements = ['Q1'],
-                    get_cmd = None,
+                    element = None,
                     set_cmd=None,
                 )
-                if verbose: 
-                    print(f'Added {getattr(self, key).name} successfully!') 
-
-            elif isinstance(value["value"], list):
-                for i, item in enumerate(value["value"]):
-                    par_name = f'{key}_{self.elements[i]}'
-                    if par_name in self.parameters:
-                        if verbose: 
-                            print("Duplicate paramter \"" + par_name + "\" skipped")
-                        continue
-                    init_val = item/self.unit_amp() if value["unit"].lower() == 'v' else item
-                    self.add_parameter(
-                        name  = par_name,
-                        unit = value["unit"],
-                        initial_value = init_val,
-                        parameter_class = SequenceParameter,
-                        elements = ['Q1'],
-                        set_cmd=None,
-                    )
-                    if verbose:
-                        print(f'Added {getattr(self, par_name).name} successfully!')
             else:
-                warnings.warn("Parameter " + str(key) + 
+                warnings.warn("Parameter " + str(param_name) +
                               " is not of type float int or list")
-                
+                      
     def run_remote_simulation(self, duration = 10000):
         """
         Simulates the MW sequence on a remote FPGA provided by Quantum Machines
