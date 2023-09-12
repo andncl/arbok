@@ -8,7 +8,7 @@ class SequenceParameter(Parameter):
     """
     A parameter wrapper that adds the respective element as attribute
     """
-    def __init__(self, elements, *args, **kwargs):
+    def __init__(self, element, *args, **kwargs):
         """
         Constructor for 'SequenceParameter' class
 
@@ -17,7 +17,7 @@ class SequenceParameter(Parameter):
             batched (bool): Is the variab
         """
         super().__init__(*args, **kwargs)
-        self.element = elements
+        self.element = element
         self.batched = False
         self.qua_var = None
 
@@ -30,6 +30,7 @@ class SequenceParameter(Parameter):
             return self.get()
 
     def set_on_program(self, *args):
+        """ Adds parameter as settable on OPX program """
         self.root_instrument.settables.append(*args[0])
 
 class GettableParameter:
