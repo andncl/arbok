@@ -1,22 +1,17 @@
 from qm.qua import *
 
-from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
-from arbok.core.sequence_parameter import ReadParameter
+from arbok.core.read_sequence import ReadSequence
 from arbok.QMv2.Readout import Readout
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
 
-from qcodes.parameters import ParameterWithSetpoints
-from qcodes.validators import Arrays
-
 readJ = 0
 
-class UpDownReadout(Sequence):
+class UpDownReadout(ReadSequence):
     """
     Class containing parameters and sequence for mixed down up initialization
     Args:
-    program_parameters (dict): Dict containing all program parameters 
-    unit_amp (float): unit amplitude of all pulses
+        param_config (dict): Dict containing all program parameters 
     """
     def __init__(
             self, 
@@ -48,35 +43,21 @@ class UpDownReadout(Sequence):
         self.config = param_config
         self.add_qc_params_from_config(self.config)
 
-        self.ref2 = Readout('ref2_', self)
+        self.ref2 = Readout('ref2', self)
         self.ref2.read_label =  'SDC'
-        self.read = Readout('read_', self)
+        self.read = Readout('read', self)
         self.read.read_label = 'SDC'
-        self.diff = Readout('diff_', self)
+        self.diff = Readout('diff', self)
         self.diff.read_label = 'SDC'
         self.diff.threshold = 0.004
-        self.gettables = [self.ref2, self.read, self.diff]
-        self.add_qc_read_params()
-
-    def add_qc_read_params(self):
-        """ Adds all gettables from the classes gettables"""
-        for gettable in self.gettables:
-            self.add_parameter(
-                name = gettable.name,
-                setpoints = (),
-                label = 'empty',
-                parameter_class = ParameterWithSetpoints
-            )
+        self.readouts = [self.ref2, self.read, self.diff]
+        #self.add_qc_read_params()
+        self.add_gettables_from_readouts()
 
     def qua_declare(self):
-        for gettable in self.gettables:
-            gettable.init_qua_vars()
-
-    def qua_stream(self):
-        print("STREAMING")
-        for gettable in self.gettables:
-            gettable.save_streams()
-            continue
+        """ QUA variable declaration for mixed down up initialization """
+        for readout in self.readouts:
+            readout.init_qua_vars()
         
     def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
