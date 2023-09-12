@@ -17,21 +17,7 @@ class UpDownReadout(ReadSequence):
             self, 
             name: str,
             sample = Sample('sunshine', rf2v_config),
-            param_config = {
-                'elements': ['P1', 'J1', 'P2'],
-                'unit_amp': {'unit': 'V', 'value': 0.5},
-                'vHome':{'value': [0, 0, 0], 'unit': 'V'},
-                'vReference': {'unit': 'V', 'value': [0.1, 0.1, 0.1]},
-                'tReadReferenceRamp': {'unit': 's', 'value': int(17)},
-                'vPreRead': {'unit': 'V', 'value': [0.065, 0, -0.065]},
-                'tPreReadRamp': {'unit': 's', 'value': int(17)},
-                'vPreReadPoint': {'unit': 'V', 'value': [0.0925, -0.095, -0.0925]},
-                'tPreReadPoint': {'unit': 's', 'value': int(6)},
-                'vRead': {'unit': 'V', 'value': [0.0925, -0.095, -0.0925]},
-                'tReadRamp': {'unit': 's', 'value': int(12)},
-                'tPreRead': {'unit': 's', 'value': int(0.1e3/4)},
-                'tPostRead': {'unit': 's', 'value': int(0.1e3/4)},
-            },
+            seq_config: dict = None,
     ):
         """
         Constructor method for 'DummyReadout' class
@@ -40,8 +26,10 @@ class UpDownReadout(ReadSequence):
         unit_amp (float): unit amplitude of all pulses
         """
         super().__init__(name, sample)
-        self.config = param_config
-        self.add_qc_params_from_config(self.config)
+        self.seq_config = seq_config
+        if self.seq_config is None:
+            self.seq_config = self.get_default_seq_config()
+        self.add_qc_params_from_config(self.seq_config)
 
         self.ref2 = Readout('ref2', self)
         self.ref2.read_label =  'SDC'
@@ -131,3 +119,48 @@ class UpDownReadout(ReadSequence):
         align()
 
         self.diff.takeDiff(self.read, self.ref2)
+
+    def get_default_seq_config(self, elements: list = None) -> dict:
+        """ Generates the sequence configuration dictionary """
+        if elements is None:
+            elements = ['P1', 'J1', 'P2']
+        P1 = elements[0]
+        J1 = elements[1]
+        P2 = elements[2]
+
+        config = {
+            'unit_amp': {'unit': 'V', 'value': 0.5},
+            'tReadReferenceRamp': {'unit': 's', 'value': int(17)},
+            'tReadRamp': {'unit': 's', 'value': int(12)},
+            'tPreRead': {'unit': 's', 'value': int(0.1e3/4)},
+            'tPostRead': {'unit': 's', 'value': int(0.1e3/4)},
+            'tPreReadPoint': {'unit': 's', 'value': int(6)},
+            'tPreReadRamp': {'unit': 's', 'value': int(17)},
+
+            'vHome':{'unit': 'V', 'elements': {
+                P1: 0.0,
+                J1: 0.0,
+                P2: 0.0,
+            }},
+            'vReference': {'unit': 'V', 'elements': {
+                P1: 0.1,
+                J1: 0.1,
+                P2: 0.1,
+            }},
+            'vPreRead': {'unit': 'V', 'elements': {
+                P1: 0.065,
+                J1: 0,
+                P2: 0.065,
+            }},
+            'vPreReadPoint': {'unit': 'V', 'elements': {
+                P1: 0.0925,
+                J1: -0.095,
+                P2: -0.0925,
+            }},
+            'vRead': {'unit': 'V', 'elements': {
+                P1: 0.0925,
+                J1: -0.095,
+                P2: -0.0925,
+            }}
+        }
+        return dict(config)
