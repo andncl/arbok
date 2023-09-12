@@ -1,10 +1,4 @@
-import site
-from arbok.core.sample import Sample
-from arbok.core.sequence_parameter import SequenceParameter
-from qcodes.instrument import (
-    Instrument,
-    InstrumentBase
-)
+from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.validators import Arrays
 
 from qm.qua import *
@@ -15,6 +9,8 @@ from qm import SimulationConfig
 
 import warnings
 import copy
+
+from arbok.core.sequence_parameter import SequenceParameter
 
 class Sequence(Instrument):
     """
@@ -31,19 +27,19 @@ class Sequence(Instrument):
 
         self.add_qc_params_from_config(self.param_config)
         self.elements = self.sample.config['elements'].keys()
-    
+
     def qua_declare(self):
         """Contains raw QUA code to declare variable"""
         return
-    
+
     def qua_sequence(self):
         """Contains raw QUA code to define the pulse sequence"""
-        returns
-    
+        return
+
     def qua_stream(self):
         """Contains raw QUA code to define streams"""
         return
-    
+
     def sweep_size(self) -> int:
         """ Returns the sweep size from the settables via the setpoints_grid"""
         sweep_size = 1
@@ -51,23 +47,16 @@ class Sequence(Instrument):
             sweep_size *= len(sweep_list)
         return sweep_size
 
-    def sweep_size(self):
-        sweep_dim = 1
-        for sweep_list in self.setpoints_grid:
-            sweep_dim *= len(sweep_list)
-        return sweep_dim
-    
     @property
     def parent(self) -> InstrumentBase:
         return self._parent
-    
+
     @property
     def root_instrument(self) -> InstrumentBase:
         if not self._parent:
             return self
-        else:
-            return self._parent.root_instrument
-    
+        return self._parent.root_instrument
+
     def add_subsequence(self, new_sequence):
         """
         Adds a subsequence to the entire programm. Subsequences are added as 
@@ -120,7 +109,7 @@ class Sequence(Instrument):
             self.recursive_qua_generation('sequence')
             #for par in self.settables: par.batched = False
             return
-        elif len(settables) == len(self.settables):
+        if len(settables) == len(self.settables):
             for i, par in enumerate(settables):
                 par.batched = True
                 #par.vals = Arrays(shape= np.shape(self.setpoints_grid[i] ))
@@ -133,9 +122,9 @@ class Sequence(Instrument):
                 elif par.get().dtype == int:
                     par.qua_var = declare(int)
                     globals()[par.name+'_sweep_val'] = declare(int)
-                else: 
+                else:
                     raise ValueError("Type not supported. Must be float or int")
-                
+    
         if len(settables) == len(setpoints_grid):
             parameter = settables[-1]
             sweep_value = globals()[parameter.name+'_sweep_val']
@@ -148,7 +137,7 @@ class Sequence(Instrument):
             raise ValueError(
                 "settables and setpoints_grid must have same dimensions")
 
-    def recursive_qua_generation(self, seq_type = 'sequence'):
+    def recursive_qua_generation(self, seq_type):
         """
         Recursively runs all QUA code stored in submodules of the given sequence
 
