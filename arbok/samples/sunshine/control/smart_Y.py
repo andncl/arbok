@@ -13,7 +13,7 @@ class SmartY(Sequence):
             sample = Sample('sunshine', rf2v_config),
             config = {
                 'unit_amp': {'unit': 'V', 'value': 0.5},
-                'amp': {'unit': 'V', 'value': 0.5},
+                'vControlY': {'unit': 'V', 'value': 0.9},
                 'smart_cycles': {'unit': '', 'value': int(5)},
             },
     ):
@@ -33,7 +33,7 @@ class SmartY(Sequence):
 
         nn = declare(int)
         with for_(nn, 0, nn < self.smart_cycles(), nn+1):
-            play('sine'*amp(self.amp()), 'P2_not_sticky')
+            play('sine'*amp(self.vControlY()), 'P2_not_sticky')
             play('cos', 'Q1')
 
         align('Q1','P1','P2','J1','P2_not_sticky','P1_not_sticky','J1_not_sticky')

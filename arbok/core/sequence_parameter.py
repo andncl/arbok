@@ -8,7 +8,7 @@ class SequenceParameter(Parameter):
     """
     def __init__(self, elements, *args, **kwargs):
         """
-        Constructor for 'Sequence parameter class
+        Constructor for 'SequenceParameter' class
 
         Args:
             elements (list): Elements that should be influenced by parameter
@@ -19,6 +19,7 @@ class SequenceParameter(Parameter):
         self.batched = False
         self.qua_var = None
 
+
     def __call__(self, *args, **kwargs):
         if len(args) == 1:
             self.set(*args)
@@ -26,8 +27,8 @@ class SequenceParameter(Parameter):
             return self.qua_var
         else: 
             return self.get()
-        
-class ReadParameter(Parameter):
+
+class ReadParameter(ParameterWithSetpoints):
     """
     A read parameter wrapper containing OPX result fetching logic
     """

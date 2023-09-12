@@ -1,12 +1,9 @@
-import numpy as np
 from qm.qua import *
 
 from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
 from arbok.core.sequence_parameter import ReadParameter
 from arbok.QMv2.Readout import Readout
-
-from arbok.core.helpers.dummy_gettable_set import DummyGettableSet
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
 
 from qcodes.parameters import ParameterWithSetpoints
@@ -14,7 +11,7 @@ from qcodes.validators import Arrays
 
 readJ = 0
 
-class OtherStReadout(Sequence):
+class UpDownReadout(Sequence):
     """
     Class containing parameters and sequence for mixed down up initialization
     Args:
@@ -62,26 +59,25 @@ class OtherStReadout(Sequence):
         self.add_qc_read_params()
 
     def add_qc_read_params(self):
+        """ Adds all gettables from the classes gettables"""
         for gettable in self.gettables:
-                for stream in gettable.stream_list:
-                        self.add_parameter(
-                        name = gettable.name + stream,
-                        #setpoints = (),
-                        label = 'empty',
-                        parameter_class = ReadParameter,
-                        #vals = Arrays(shape = (1,))
-                        )
+            self.add_parameter(
+                name = gettable.name,
+                setpoints = (),
+                label = 'empty',
+                parameter_class = ParameterWithSetpoints
+            )
 
     def qua_declare(self):
         for gettable in self.gettables:
             gettable.init_qua_vars()
 
     def qua_stream(self):
+        print("STREAMING")
         for gettable in self.gettables:
             gettable.save_streams()
             continue
         
-
     def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
 
@@ -152,13 +148,5 @@ class OtherStReadout(Sequence):
         play('unit_ramp_20ns'*amp(self.vHome_P2()-self.vRead_P2()),'P2')
 
         align()
-                    
-        #setVars.feedback_SSR(ref2.read,set_pt=SETFB_DCsetpt, fb_gate='SDC',
-        #                      gain = SETFB_DCalpha)
 
-        # ramp_to_zero('P1')
-        # ramp_to_zero('J1')
-        # ramp_to_zero('P2')
-        # ramp_to_zero('J2')
-        # ramp_to_zero('P3')
         self.diff.takeDiff(self.read, self.ref2)
