@@ -27,7 +27,6 @@ class ReadSequence(Sequence):
                 setattr(self, gettable_name, gettable)
 
     def qua_stream(self):
-        print("STREAMING")
         for readout in self.readouts:
             readout.save_streams()
             continue
