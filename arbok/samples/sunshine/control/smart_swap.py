@@ -1,4 +1,3 @@
-
 from arbok.core.sequence import Sequence
 from arbok.core.sample import Sample
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config

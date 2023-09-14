@@ -13,18 +13,18 @@ import matplotlib.pyplot as plt
 from arbok.core.sequence import Sequence
 
 class Readout():
-    def __init__(self, name, sequence, read_label = None, 
+    def __init__(self, name, sequence, read_label = None,
                  threshold = 0):
         self.name = name
         self.sequence =  sequence
         self.read_label = read_label
         self.threshold = threshold
-           
+        
         self.read_I = None
         self.read_Q = None
         self.read = None
         self.state = None
-        
+
         self.read_I_stream = None
         self.read_Q_stream = None
         self.read_stream = None
@@ -50,7 +50,7 @@ class Readout():
         self.state_stream = declare_stream()
 
     def measure(self):
-        measure('measure', self.read_label, None, 
+        measure('measure', self.read_label, None,
                 demod.full('x',self.read_I),
                 demod.full('y',self.read_Q))
         

@@ -76,7 +76,7 @@ tReadReferenceRamp = int(17) #
 tPostReadRef = int(0.1e3/4) 
 tPostReadRef2 = int(0.1e3/4) 
 
-tReadInt = int(1e2/4)
+tReadInt = int(1e2/4) # <================ HERE!
 tReadInt_nominal = int(180e3/4)
 
 tSliceInt = int(1e5/4)

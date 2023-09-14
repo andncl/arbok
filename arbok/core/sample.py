@@ -14,5 +14,4 @@ class Sample():
         """
         self.name = name
         self.config = config
-        self.elements = None
-    
+        self.elements = self.config['elements'].keys()

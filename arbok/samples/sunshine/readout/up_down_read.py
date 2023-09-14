@@ -5,8 +5,6 @@ from arbok.core.read_sequence import ReadSequence
 from arbok.QMv2.Readout import Readout
 from arbok.samples.sunshine.configs.rf2v_config import rf2v_config
 
-readJ = 0
-
 class UpDownReadout(ReadSequence):
     """
     Class containing parameters and sequence for mixed down up initialization
@@ -14,7 +12,7 @@ class UpDownReadout(ReadSequence):
         param_config (dict): Dict containing all program parameters 
     """
     def __init__(
-            self, 
+            self,
             name: str,
             sample = Sample('sunshine', rf2v_config),
             seq_config: dict = None,
@@ -39,25 +37,24 @@ class UpDownReadout(ReadSequence):
         self.diff.read_label = 'SDC'
         self.diff.threshold = 0.004
         self.readouts = [self.ref2, self.read, self.diff]
-        #self.add_qc_read_params()
         self.add_gettables_from_readouts()
 
     def qua_declare(self):
         """ QUA variable declaration for mixed down up initialization """
         for readout in self.readouts:
             readout.init_qua_vars()
-        
+
     def qua_sequence(self):
         """QUA sequence to perform mixed down up initialization"""
 
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        play('unit_ramp_20ns'*amp(self.vReference_P1() - self.vHome_P1()),
-                'P1',duration=self.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(self.vReference_J1() - self.vHome_J1()),
-                'J1',duration=self.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(self.vReference_P2() - self.vHome_P2()),
-                'P2',duration=self.tReadReferenceRamp())
+
+        self.arbok_go(
+                 from_volt = 'vHome',
+                 to_volt = 'vReference',
+                 duration = self.tReadReferenceRamp(),
+                 operation = 'unit_ramp_20ns')
         
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
@@ -71,35 +68,31 @@ class UpDownReadout(ReadSequence):
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         
-        play('unit_ramp_20ns'*amp(-self.vReference_P1() + self.vHome_P1()),
-                'P1',duration=self.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(-self.vReference_J1() + self.vHome_J1()),
-                'J1',duration=self.tReadReferenceRamp())
-        play('unit_ramp_20ns'*amp(-self.vReference_P2() + self.vHome_P2()),
-                'P2',duration=self.tReadReferenceRamp())
+        self.arbok_go(
+                 from_volt = 'vReference',
+                 to_volt = 'vHome',
+                 duration = self.tReadReferenceRamp(),
+                 operation = 'unit_ramp_20ns')
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        
-        play('unit_ramp_20ns'*amp(self.vPreRead_P1() - self.vHome_P1()),'P1',
-                duration = self.tPreReadRamp())
-        play('unit_ramp_20ns'*amp(self.vPreRead_J1() - self.vHome_J1()),'J1',
-                duration = self.tPreReadRamp())
-        play('unit_ramp_20ns'*amp(self.vPreRead_P2() - self.vHome_P2()),'P2',
-                duration = self.tPreReadRamp())
-        
+        self.arbok_go(
+                 from_volt = 'vHome',
+                 to_volt = 'vPreRead',
+                 duration = self.tPreReadRamp(),
+                 operation = 'unit_ramp_20ns')
+
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky'
                 ,'Qoff','J1_not_sticky')
         wait(self.tPreReadPoint())
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
-        
-        play('unit_ramp_20ns'*amp(self.vRead_P1() - self.vPreRead_P1()),'P1',
-                duration = self.tReadRamp())
-        play('unit_ramp_20ns'*amp(self.vRead_J1() - self.vPreRead_J1()),'J1',
-                duration = self.tReadRamp())
-        play('unit_ramp_20ns'*amp(self.vRead_P2() - self.vPreRead_P2()),'P2',
-                duration = self.tReadRamp())
-                
+
+        self.arbok_go(
+                 from_volt = 'vPreRead',
+                 to_volt = 'vRead',
+                 duration = self.tReadRamp(),
+                 operation = 'unit_ramp_20ns')
+
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         wait(self.tPreRead(),'SDC')       
@@ -112,10 +105,10 @@ class UpDownReadout(ReadSequence):
         align('Q1','J1','Q1add','P1','P2','J2','P1_not_sticky','P2_not_sticky',
                 'Qoff','J1_not_sticky')
         
-        play('unit_ramp_20ns'*amp(self.vHome_P1()-self.vRead_P1()),'P1')
-        play('unit_ramp_20ns'*amp(self.vHome_J1()-self.vRead_J1()),'J1')
-        play('unit_ramp_20ns'*amp(self.vHome_P2()-self.vRead_P2()),'P2')
-
+        self.arbok_go(
+                 from_volt = 'vRead',
+                 to_volt = 'vHome',
+                 operation = 'unit_ramp_20ns')
         align()
 
         self.diff.takeDiff(self.read, self.ref2)
@@ -143,9 +136,9 @@ class UpDownReadout(ReadSequence):
                 P2: 0.0,
             }},
             'vReference': {'unit': 'V', 'elements': {
-                P1: 0.1,
-                J1: 0.1,
-                P2: 0.1,
+                P1: 0.9,
+                J1: 0.9,
+                P2: 0.9,
             }},
             'vPreRead': {'unit': 'V', 'elements': {
                 P1: 0.065,
