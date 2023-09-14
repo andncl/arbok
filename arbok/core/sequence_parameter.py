@@ -8,7 +8,7 @@ class SequenceParameter(Parameter):
     """
     A parameter wrapper that adds the respective element as attribute
     """
-    def __init__(self, element, *args, **kwargs):
+    def __init__(self, element, config_name, *args, **kwargs):
         """
         Constructor for 'SequenceParameter' class
 
@@ -18,6 +18,7 @@ class SequenceParameter(Parameter):
         """
         super().__init__(*args, **kwargs)
         self.element = element
+        self.config_name = config_name
         self.batched = False
         self.qua_var = None
 
@@ -50,6 +51,7 @@ class GettableParameter:
         self.label = ""
         self.batched = True
         self.delay = 0.0
+        self.can_resume = False
 
         self.readout = readout
         self.program = None
@@ -68,13 +70,13 @@ class GettableParameter:
         if self.result is None:
             # Will be executed on the first call of get()
             self.set_up_gettable_from_program()
-            if self.program.stream_mode == "pause_each": 
-                self.qm_job.resume()
-            
+            #if self.program.stream_mode == "pause_each" and not self.can_resume: 
+            #    self.qm_job.resume()
+      
         self._fetch_from_opx()
         if self.buffer_val is None:
             warnings.warn("NO VALUE STREAMED!")
-        if self.program.stream_mode == "pause_each": 
+        if self.program.stream_mode == "pause_each" and self.can_resume: 
             self.qm_job.resume()
         return self.buffer_val
     
@@ -92,19 +94,27 @@ class GettableParameter:
     def _fetch_from_opx(self):
         """ Fetches and returns data from OPX after results came in """
         self.count_so_far = self.result.count_so_far()
+        print("FETC", self.count_so_far, (self.count + 1)*self.batch_size, self.name)
         if self.count_so_far > (self.count + 2)*self.batch_size:
             warnings.warn("OVERHEAD of data on OPX! Try larger batches or other sweep type!")
 
         self._wait_until_buffer_full()
+        print("READ", self.result.count_so_far(), (self.count + 1)*self.batch_size)
         self._fetch_opx_buffer()
 
     def _wait_until_buffer_full(self):
+        """ This function is running until a batch with self.batch_size is ready """
         while self.count_so_far < (self.count + 1)*self.batch_size:
-            # This loop is running until a batch with self.batch_size is ready
+            print("WAIT", self.count_so_far, (self.count + 1)*self.batch_size)
             self.count_so_far = self.result.count_so_far()
 
     def _fetch_opx_buffer(self):
+        """
+        Fetches the OPX buffer into the `buffer_val` and increments the internal
+        counter `count`
+        """
         self.buffer_val = self.buffer.fetch(-1)
+        print("Buffersize", np.shape(self.buffer_val))
         if self.buffer_val is None:
             raise ValueError("NO VALUE STREAMED")
         self.count += 1
