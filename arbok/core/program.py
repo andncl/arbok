@@ -2,6 +2,7 @@ from arbok.core.sequence import Sequence
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
 from qm.qua import *
+from qm import SimulationConfig
 
 import copy
 
@@ -24,12 +25,16 @@ class Program(Sequence):
     def run(self):
         self.qm_job = self.opx.execute(self.get_program())
         self.result_handles = self.qm_job.result_handles
-        #self.qm_job.resume()
+        if self.stream_mode == "pause_each": 
+           self.qm_job.resume()
 
     def prepare_meas_ctrl(self, meas_ctrl):
         meas_ctrl.settables(self.settables)
         meas_ctrl.setpoints_grid(self.setpoints_grid)
-        return self.settables
+        meas_ctrl.gettables(self.gettables)
+        for i, gettable in enumerate(self.gettables):
+            gettable.batch_size = self.sweep_size()
+            gettable.can_resume = True if i==(len(self.gettables) -1) else False
 
     def get_program(self, simulate = False):
         """
@@ -42,8 +47,8 @@ class Program(Sequence):
         with program() as prog:
                 self.recursive_qua_generation(seq_type = 'declare')
                 with infinite_loop_():
-                    #if True: #not simulate: # and self.stream_mode == "pause_each":
-                    pause()
+                    if not simulate:
+                        pause()
                     if True or simulate: # self.wait_for_trigger()
                         self.recursive_sweep_generation(
                             copy.copy(self.settables),
@@ -53,3 +58,16 @@ class Program(Sequence):
                 with stream_processing():
                     self.recursive_qua_generation(seq_type = 'stream')
         return prog
+    
+    def run_local_simulation(self, duration):
+        if not self.qmm:
+            raise ConnectionError(
+                "No QMM found! Connect an OPX via `connect_OPX`")
+        simulated_job = self.qmm.simulate(
+            self.sample.config,
+            self.get_program(simulate = True),
+            SimulationConfig(duration=duration))
+     
+        samples = simulated_job.get_simulated_samples()
+        self._plot_simulation_results(samples)
+        return simulated_job
