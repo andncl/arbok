@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 
 from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.validators import Arrays
+from qcodes.dataset import DataSetDefinition, LinSweeper, datasaver_builder, dond_into
 
 from qm.qua import *
 from qualang_tools.loops import from_array
@@ -214,7 +215,7 @@ class Sequence(Instrument):
     def arbok_go(
             self, to_volt: Union[str, List], operation: str,
             from_volt: Optional[Union[str, List]] = None,
-            duration: Optional[int]= None
+            duration = None
         ):
         """ 
         Helper function that `play`s a qua operation on the respective elements 
@@ -227,10 +228,10 @@ class Sequence(Instrument):
             duration (str): duration of the operation 
             operation (str): Operation to be played -> find in OPX config
         """
-        if duration is None:
-            duration = 5 # minimum of 20 ns (5 cycles)
-        elif duration < 5:
-            raise ValueError("Cant be shorter than 5 cycles (20 ns)")
+        # if duration is None:
+        #     duration = lambda: 0 # minimum of 20 ns (5 cycles)
+        # elif duration < 5:
+        #     raise ValueError("Cant be shorter than 5 cycles (20 ns)")
 
         if from_volt is None:
             from_volt = ['vHome']
@@ -245,7 +246,7 @@ class Sequence(Instrument):
             play(
                 operation*amp( target_v - origin_v ),
                 target_list[0].element,
-                duration = duration
+                duration = duration()
                 )
 
     def _find_parameters_from_keywords(self, keys: Union[str, List]):
@@ -271,6 +272,7 @@ class Sequence(Instrument):
         return np.swapaxes(np.array(param_list), 0, 1).tolist()
 
     def _plot_simulation_results(self, simulated_samples):
+        """ Visualizes analog and digital channel simulation results """
         fig, [a, b] = plt.subplots(2, sharex= True)
         for channel, data in simulated_samples.con1.analog.items():
             a.plot(data, label = channel)
