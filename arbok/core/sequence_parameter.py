@@ -4,6 +4,7 @@ from qm.qua import *
 
 import warnings
 
+
 class SequenceParameter(Parameter):
     """
     A parameter wrapper that adds the respective element as attribute
@@ -21,6 +22,7 @@ class SequenceParameter(Parameter):
         self.config_name = config_name
         self.batched = False
         self.qua_var = None
+        self.value = None
 
     def __call__(self, *args, **kwargs):
         if len(args) == 1:
@@ -29,12 +31,16 @@ class SequenceParameter(Parameter):
             return self.qua_var
         else: 
             return self.get()
+        
+    def set_raw(self, value):
+        self.value = value
+
 
     def set_on_program(self, *args):
         """ Adds parameter as settable on OPX program """
         self.root_instrument.settables.append(*args[0])
 
-class GettableParameter:
+class GettableParameter(ParameterWithSetpoints):
     """
     This is a valid Gettable not because of inheritance, but because it has the
     expected attributes and methods.
@@ -46,12 +52,13 @@ class GettableParameter:
             name (dict): name of the GettableParameter
             readout (Readout): Readout class summarizing data streams and variables
         """
-        self.name = name
+        super().__init__(name, *args, **kwargs)
         self.unit = ""
         self.label = ""
         self.batched = True
         self.delay = 0.0
         self.can_resume = False
+        #self.setpoints = (Parameter('empty'),),
 
         self.readout = readout
         self.program = None
@@ -65,7 +72,7 @@ class GettableParameter:
         self.batch_size = 0
         self.count = 0
 
-    def get(self):
+    def get_raw(self):
         """ Get method to retrieve a single batch of data from a running measurement"""
         if self.result is None:
             # Will be executed on the first call of get()
@@ -78,7 +85,7 @@ class GettableParameter:
             warnings.warn("NO VALUE STREAMED!")
         if self.program.stream_mode == "pause_each" and self.can_resume: 
             self.qm_job.resume()
-        return self.buffer_val
+        return self.buffer_val.reshape(self.shape)
     
     def set_up_gettable_from_program(self):
         """ Set up Gettable attributes from running OPX """
@@ -89,6 +96,7 @@ class GettableParameter:
         self.result = getattr( self.qm_job.result_handles, self.name )
         self.buffer = getattr( self.qm_job.result_handles, self.name + '_buffer')
         self.shape = tuple([len(x) for x in self.program.setpoints_grid])
+        print(self.shape)
         self.batch_size = self.program.sweep_size()
 
     def _fetch_from_opx(self):
@@ -113,7 +121,7 @@ class GettableParameter:
         Fetches the OPX buffer into the `buffer_val` and increments the internal
         counter `count`
         """
-        self.buffer_val = self.buffer.fetch(-1)
+        self.buffer_val = np.array(self.buffer.fetch(-1), dtype = float)
         print("Buffersize", np.shape(self.buffer_val))
         if self.buffer_val is None:
             raise ValueError("NO VALUE STREAMED")
