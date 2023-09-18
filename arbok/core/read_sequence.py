@@ -1,6 +1,8 @@
 from arbok.core.sequence import Sequence
 from arbok.core.sequence_parameter import GettableParameter
 
+from qcodes.validators import Arrays
+
 class ReadSequence(Sequence):
     """ Baseclass for sequences containing readouts """
     def __init__(self, name, sample):
@@ -22,6 +24,7 @@ class ReadSequence(Sequence):
                 gettable = GettableParameter(
                     name = gettable_name,
                     readout = readout,
+                    vals = Arrays(shape = (1,))
                 )
                 self.gettables[gettable_name] = gettable
                 setattr(self, gettable_name, gettable)
