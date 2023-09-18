@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from arbok.core.sequence import Sequence
 
 class Readout():
+    """ Helper class for SET readout"""
     def __init__(self, name, sequence, read_label = None,
                  threshold = 0):
         self.name = name
@@ -50,6 +51,7 @@ class Readout():
         self.state_stream = declare_stream()
 
     def measure(self):
+        """ Performs a measurement on the given element """
         measure('measure', self.read_label, None,
                 demod.full('x',self.read_I),
                 demod.full('y',self.read_Q))
