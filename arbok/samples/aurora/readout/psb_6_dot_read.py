@@ -59,7 +59,7 @@ class PSB6dotRead(ReadSequence):
         self.arbok_go(
                 from_volt = 'vHome',
                 to_volt = 'vPreRead',
-                duration = self.tPreReadRamp(),
+                duration = self.tPreReadRamp,
                 operation = 'unit_ramp')
         align()
         wait(self.tPreRead(), 'SDC1')
@@ -73,7 +73,7 @@ class PSB6dotRead(ReadSequence):
         self.arbok_go(
                 from_volt = 'vPreRead',
                 to_volt = 'vRead',
-                duration = self.tReadRamp(),
+                duration = self.tReadRamp,
                 operation = 'unit_ramp')
 
         align()
@@ -88,7 +88,7 @@ class PSB6dotRead(ReadSequence):
         self.arbok_go(
                 from_volt = 'vRead',
                 to_volt = 'vHome',
-                duration = self.tPreReadRamp(),
+                duration = self.tPreReadRamp,
                 operation = 'unit_ramp')
         align()
         wait(self.tShotPost(), 'P1')

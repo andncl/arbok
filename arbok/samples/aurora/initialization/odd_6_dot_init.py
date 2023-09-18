@@ -35,7 +35,7 @@ class InitOdd6dot(Sequence):
         self.arbok_go(
                 from_volt = 'vHome',
                 to_volt = 'vInitPreLoadMixed',
-                duration = self.tInitPreLoadRampMixed(),
+                duration = self.tInitPreLoadRampMixed,
                 operation = 'unit_ramp')
         align()
         wait(self.tInitPreLoadMixed())
@@ -43,14 +43,14 @@ class InitOdd6dot(Sequence):
         self.arbok_go(
                 from_volt = 'vInitPreLoadMixed',
                 to_volt = 'vInitLoadMixed',
-                duration = self.tInitLoadRampMixed(),
+                duration = self.tInitLoadRampMixed,
                 operation = 'unit_ramp')
         align()
         wait(self.tInitLoadMixed())
         align()
         self.arbok_go(
                 to_volt = 'vDeltaMixed',
-                duration = self.tDeltaLoadRampMixed(),
+                duration = self.tDeltaLoadRampMixed,
                 operation = 'unit_ramp')
         align()
         wait(self.tDeltaLoadMixed())
@@ -58,7 +58,7 @@ class InitOdd6dot(Sequence):
         self.arbok_go(
                 from_volt = ['vDeltaMixed', 'vInitLoadMixed'],
                 to_volt = 'vHome',
-                duration = self.tHomeRamp(),
+                duration = self.tHomeRamp,
                 operation = 'unit_ramp')
         align()
 
