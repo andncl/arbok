@@ -94,9 +94,6 @@ class Program(Sequence):
         for i, settable in enumerate(self.settables):
             settable.vals = Arrays(shape=(len(self.setpoints_grid[i]),))
             print(settable.vals)
-            #settable.vals = Arrays(
-            #    shape = tuple(len(x) for x in self.setpoints_grid))
-            #settable.set_raw(settable_value_grid[i])
 
         for i, gettable in enumerate(self.gettables):
             gettable.batch_size = self.sweep_size()
