@@ -1,7 +1,9 @@
 import copy
 
 from qm.QuantumMachinesManager import QuantumMachinesManager
-from qm.qua import *
+from qm.qua import (
+    program, infinite_loop_, pause, stream_processing, declare, for_, assign
+)
 from qm import SimulationConfig
 
 from qcodes.parameters import Parameter
@@ -34,6 +36,7 @@ class Program(Sequence):
 
         self.stream_mode = "pause_each"
     
+    def connect_opx(self, host_ip: str):
         """
         Creates QuantumMachinesManager and opens a quantum machine on it with
         the given IP address
@@ -80,7 +83,9 @@ class Program(Sequence):
 
     def prepare_gettables(self):
         """
-        Prepares attributes of gettable parameters 
+        Prepares the `SequenceParameter`s and `GettableParameters`.
+        `GettableParameters` are QCoDeS ParameterWithSetpoints. Those are
+        defined with setpoints which are in our case the se
         """
         settable_value_grid = np.meshgrid(*self.setpoints_grid, indexing='ij' )
         for i, settable in enumerate(self.settables):
@@ -138,23 +143,33 @@ class Program(Sequence):
 
         Args:
             simulate (bool): Flag whether program is simulated
+        
+        Returns:
+            program: Program compiled into QUA language
         """
         with program() as prog:
-                self.recursive_qua_generation(seq_type = 'declare')
-                with infinite_loop_():
-                    if not simulate:
-                        pause()
-                    if True or simulate: # self.wait_for_trigger()
-                        self.recursive_sweep_generation(
-                            copy.copy(self.settables),
-                            copy.copy(self.setpoints_grid)
-                            )
-
-                with stream_processing():
-                    self.recursive_qua_generation(seq_type = 'stream')
+            self.recursive_qua_generation(seq_type = 'declare')
+            with infinite_loop_():
+                if not simulate:
+                    pause()
+                self.recursive_sweep_generation(
+                    copy.copy(self.settables),
+                    copy.copy(self.setpoints_grid)
+                    )
+            with stream_processing():
+                self.recursive_qua_generation(seq_type = 'stream')
         return prog
     
-    def run_local_simulation(self, duration):
+    def run_local_simulation(self, duration: int):
+        """
+        Simulates the given program of the sequence for `duration` cycles
+
+        Args:
+            duration (int): 
+
+        Returns:
+            simulated_job (SimulatedJob): QM job with waveform simulation result
+        """
         if not self.qmm:
             raise ConnectionError(
                 "No QMM found! Connect an OPX via `connect_OPX`")
