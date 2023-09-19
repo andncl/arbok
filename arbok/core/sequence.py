@@ -84,18 +84,18 @@ class Sequence(Instrument):
             simulate (bool): Flag whether program is simulated
         """
         with program() as prog:
-                self.recursive_qua_generation(seq_type = 'declare')
-                with infinite_loop_():
-                    if not simulate: #not simulate: #not simulate:
-                        pause()
+            self.recursive_qua_generation(seq_type = 'declare')
+            with infinite_loop_():
+                if not simulate: #not simulate: #not simulate:
+                    pause()
                     if True or simulate: # self.wait_for_trigger()
-                        self.recursive_sweep_generation(
-                            copy.copy(self.settables),
-                            copy.copy(self.setpoints_grid)
-                            )
+                self.recursive_sweep_generation(
+                    copy.copy(self.settables),
+                    copy.copy(self.setpoints_grid)
+                    )
 
-                with stream_processing():
-                    self.recursive_qua_generation(seq_type = 'stream')
+            with stream_processing():
+                self.recursive_qua_generation(seq_type = 'stream')
         return prog
 
     def recursive_sweep_generation(self, settables, setpoints_grid):
