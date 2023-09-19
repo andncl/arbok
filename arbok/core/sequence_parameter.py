@@ -86,6 +86,10 @@ class GettableParameter(ParameterWithSetpoints):
         self.batch_size = 0
         self.count = 0
 
+    def set_raw(self, *args, **kwargs):
+        """ Empty abstract `set_raw` method. Parameter not meant to be set """
+        pass
+
     def get_raw(self):
         """ Get method to retrieve a single batch of data from a running measurement"""
         if self.result is None:
