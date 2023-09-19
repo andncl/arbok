@@ -1,13 +1,13 @@
-from qcodes.parameters import Parameter, ParameterWithSetpoints
-from qcodes.validators import Arrays
-from qm.qua import *
-
 import warnings
 
+import numpy as np
+from qcodes.parameters import Parameter, ParameterWithSetpoints
 
 class SequenceParameter(Parameter):
     """
     A parameter wrapper that adds the respective element as attribute
+
+    TODO: Write get_raw abstract method without crashing sequence compilation
     """
     def __init__(self, element, config_name, *args, **kwargs):
         """
@@ -20,21 +20,20 @@ class SequenceParameter(Parameter):
         super().__init__(*args, **kwargs)
         self.element = element
         self.config_name = config_name
-        self.batched = False
+        self.qua_sweeped = False
         self.qua_var = None
         self.value = None
 
     def __call__(self, *args, **kwargs):
         if len(args) == 1:
-            self.set(*args)
-        elif self.batched:
+            self.set_raw(*args)
+        elif self.qua_sweeped:
             return self.qua_var
-        else: 
+        else:
             return self.get()
-        
+
     def set_raw(self, value):
         self.value = value
-
 
     def set_on_program(self, *args):
         """ Adds parameter as settable on OPX program """
