@@ -34,32 +34,45 @@ class Program(Sequence):
 
         self.stream_mode = "pause_each"
     
-    def connect_OPX(self, host_ip: str):
+        """
+        Creates QuantumMachinesManager and opens a quantum machine on it with
+        the given IP address
+        
+        Args:
+            host_ip (str): Ip address of the OPX
+        """
         self.qmm = QuantumMachinesManager(host = host_ip)
         self.opx = self.qmm.open_qm(self.sample.config)
 
-
     def run(self, program):
+        """
+        Sends the program for execution to the OPX and sets the programs 
+        result handles 
+        
+        Args:
+            program (program): QUA program to be executed
+        """
         self.qm_job = self.opx.execute(program)
         self.result_handles = self.qm_job.result_handles
         if self.stream_mode == "pause_each": 
            self.qm_job.resume()
 
     def get_running_qm_job(self):
+        """ Finds qm_job on the connected opx and returns it. Also sets program 
+        attributes qm_job and result_handles """
+        # FIXME: not really working .. retreived job is not functional after 
+        #   restarting python environment
         self.qm_job = self.opx.get_running_job()
         self.result_handles = self.qm_job.result_handles
-        return
+        return self.qm_job
 
     def prepare_meas_ctrl(self, meas_ctrl):
-        """ 
-        Prepares the `MeasurementControl` object for data acquisition within
-        the quantify-core library
+        """ DEPRECATED due to move from quantify to QCoDeS measuring
+        Prepares quantify-core MeasurementControl object meas_ctrl
+        
+        Args: 
+            meas_ctrl (MeasurementControl): quantify measurement context
         """
-        # for settable in self.settables:
-        #     settable.vals = Arrays(
-        #         shape = tuple([ np.prod(
-        #             list(len(x) for x in self.setpoints_grid)) ] ))
-        #     print(settable.vals)
         meas_ctrl.settables(self.settables)
         meas_ctrl.setpoints_grid(self.setpoints_grid)
         meas_ctrl.gettables(self.gettables)
