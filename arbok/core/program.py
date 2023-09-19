@@ -87,7 +87,10 @@ class Program(Sequence):
         `GettableParameters` are QCoDeS ParameterWithSetpoints. Those are
         defined with setpoints which are in our case the se
         """
-        settable_value_grid = np.meshgrid(*self.setpoints_grid, indexing='ij' )
+        self.settables.reverse()
+        self.setpoints_grid.reverse()
+        iteration = ShotNumber(name='iteration', instrument=self)
+        self.add_parameter(iteration)
         for i, settable in enumerate(self.settables):
             settable.vals = Arrays(shape=(len(self.setpoints_grid[i]),))
             print(settable.vals)
@@ -100,9 +103,8 @@ class Program(Sequence):
             gettable.can_resume = True if i==(len(self.gettables) -1) else False
             gettable.setpoints = tuple(self.settables)
             gettable.vals = Arrays(
-                shape = tuple(len(x) for x in self.setpoints_grid))
-            
-    def run_qc_measurement(self, measurement, shots: int = 100):
+                shape = tuple(len(x) for x in list(self.setpoints_grid))
+                )
         """
         Configures and runs QCoDeS measurement object from the arbok program
         
