@@ -204,13 +204,13 @@ class Sequence(Instrument):
             port=443,
             credentials=create_credentials()
         )
-        job = QMM.simulate(self.sample.config, 
+        simulated_job = QMM.simulate(self.sample.config, 
                            self.get_program(simulate = True),
                            SimulationConfig(duration=duration))
 
-        samples = job.get_simulated_samples()
+        samples = simulated_job.get_simulated_samples()
         self._plot_simulation_results(samples)
-        return job
+        return simulated_job
 
     def arbok_go(
             self, to_volt: Union[str, List], operation: str,
