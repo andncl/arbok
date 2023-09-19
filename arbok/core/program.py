@@ -105,26 +105,20 @@ class Program(Sequence):
             gettable.vals = Arrays(
                 shape = tuple(len(x) for x in list(self.setpoints_grid))
                 )
+
+    def _prepare_qc_measurement(self, measurement: Measurement, shots: int):
         """
-        Configures and runs QCoDeS measurement object from the arbok program
+        Configures QCoDeS measurement object from the arbok program
         
         Args:
             measurement (Object): QCoDeS measurement object
+            shots (int): Amount of repetitions to average
         """
-        iteration = ShotNumber(name='iteration', instrument=self)
-        measurement.register_parameter(iteration)
-
-        add_result_args = ((iteration, iteration.get()))
-        for i, settable in enumerate(self.settables):
-            measurement.register_parameter(settable)
-            add_result_args += (settable, self.setpoints_grid[i])
-
+        measurement.register_parameter(self.iteration)
         for gettable in self.gettables:
             measurement.register_parameter(
-                gettable, setpoints = tuple(self.settables))
-            add_result_args += (gettable, gettable.get())
-
-        print(add_result_args)
+                gettable, setpoints = (self.iteration,) )
+        return measurement
         with measurement.run() as datasaver:
             for shot in range(shots):
                 iteration.set(shot)
