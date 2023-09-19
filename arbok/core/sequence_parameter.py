@@ -43,6 +43,21 @@ class GettableParameter(ParameterWithSetpoints):
     """
     This is a valid Gettable not because of inheritance, but because it has the
     expected attributes and methods.
+
+    Attributes:
+        unit (str): Unit of the parameter
+        label (label): Label for parameter (printed on axis)
+        can_resume (bool): Whether the instance resumes the program after read
+        readout (Readout): `Readout` instance that created this parameter
+        program (Program): `Program` managing the QUA program
+        qm_job (RunningQmJob): Running job on the opx to interact with
+        result (obj): QM object managing OPX streams 
+        buffer (obj): QM buffer to get results from
+        buffer_val (array): flat numpy array containing results of opx fetch
+        shape (tuple): Shape of the setpoints array
+        count_so_far (int): Total single measurements of OPX
+        batch_size (tuple): Shape of one OPX batch
+        count (int): Amount of successful `get` executions
     """
     def __init__(self, name, readout, *args, **kwargs) -> None:
         """
