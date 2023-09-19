@@ -78,7 +78,10 @@ class Sequence(Instrument):
     def get_program(self, simulate = False):
         """
         Runs the entire sequence by searching recursively through init, 
-        sequence and stream methods of all subsequences and their subsequences
+        sequence and stream methods of all subsequences and their subsequences.
+        The respective qua sequence will only be added once the recursive
+        scans have reached the lowest level of sequences (e.g sequences have no
+        sub-sequences anymore)
 
         Args:
             simulate (bool): Flag whether program is simulated
