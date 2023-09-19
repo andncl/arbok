@@ -119,16 +119,25 @@ class Program(Sequence):
             measurement.register_parameter(
                 gettable, setpoints = (self.iteration,) )
         return measurement
+
+    def run_qc_measurement(self, measurement: Measurement, shots: int):
+        """ 
+        Runs QCoDeS measurement and returns the resulting dataset
+        
+        Args:
+            measurement (Measurement): qcodes measurement object
+            shots (int): amount of repetitions to be performed for averaging  
+        Returns:
+            dataset: QCoDeS dataset
+        """
+        self._prepare_qc_measurement(measurement, shots)
         with measurement.run() as datasaver:
             for shot in range(shots):
-                iteration.set(shot)
-                datasaver.add_result(
-                    (iteration, shot),
-                    (self.settables[0], self.setpoints_grid[0]),
-                    (self.settables[1], self.setpoints_grid[1]),
-                    (self.gettables[0], self.gettables[0].get()),
-                    (self.gettables[1], self.gettables[1].get()),
-                    )
+                self.iteration.set(shot)
+                add_result_args = ((self.iteration, self.iteration.get()),)
+                for gettable in self.gettables:
+                    add_result_args += ((gettable, gettable.get_raw(),),)
+                datasaver.add_result(*add_result_args)
             dataset = datasaver.dataset
         return dataset
 
