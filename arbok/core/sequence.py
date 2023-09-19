@@ -1,12 +1,12 @@
 import warnings
 import copy
-from typing import List, Union
+from typing import List, Union, Optional
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from qcodes.instrument import Instrument, InstrumentBase
 from qcodes.validators import Arrays
-from qcodes.dataset import DataSetDefinition, LinSweeper, datasaver_builder, dond_into
 
 from qm import SimulationConfig
 from qm.QuantumMachinesManager import QuantumMachinesManager
@@ -89,13 +89,14 @@ class Sequence(Instrument):
 
         Args:
             simulate (bool): Flag whether program is simulated
+        Returns:
+            program: Program compiled into QUA language
         """
         with program() as prog:
             self.recursive_qua_generation(seq_type = 'declare')
             with infinite_loop_():
                 if not simulate: #not simulate: #not simulate:
                     pause()
-                    if True or simulate: # self.wait_for_trigger()
                 self.recursive_sweep_generation(
                     copy.copy(self.settables),
                     copy.copy(self.setpoints_grid)
@@ -123,7 +124,7 @@ class Sequence(Instrument):
         if len(settables) == len(self.settables):
             for i, par in enumerate(settables):
                 print(f"Adding qua {type(par.get())} variable for {par.name}")
-                par.batched = True
+                par.qua_sweeped = True
                 par.vals= Arrays()
                 par.set(self.setpoints_grid[i])
                 self.sweep_len *= len(self.setpoints_grid[i])
@@ -135,7 +136,7 @@ class Sequence(Instrument):
                     globals()[par.name+'_sweep_val'] = declare(int)
                 else:
                     raise TypeError("Type not supported. Must be float or int")
-    
+
         if len(settables) == len(setpoints_grid):
             print(f"Adding qua sweep loop for {settables[-1].name}")
             parameter = settables[-1]
@@ -164,7 +165,7 @@ class Sequence(Instrument):
                 getattr(subsequence, 'qua_' + str(seq_type))()
             else:
                 subsequence.recursive_qua_generation(seq_type)
-           
+
     def add_qc_params_from_config(self, config):
         """ 
         Creates QCoDeS parameters for all entries of the config 
