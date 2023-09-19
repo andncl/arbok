@@ -202,12 +202,12 @@ class Sequence(Instrument):
         Returns:
             SimulatedJob: QM job containing simulation results
         """
-        QMM = QuantumMachinesManager(
+        qmm = QuantumMachinesManager(
             host='dzurak-6d066ea0.quantum-machines.co',
             port=443,
             credentials=create_credentials()
         )
-        simulated_job = QMM.simulate(self.sample.config, 
+        simulated_job = qmm.simulate(self.sample.config, 
                            self.get_program(simulate = True),
                            SimulationConfig(duration=duration))
 
